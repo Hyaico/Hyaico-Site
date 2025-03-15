@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HYAICO - Innovative AI Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-['Inter'] bg-white">
+    <!-- Particle Canvas -->
+    <canvas id="particles"></canvas>
+
+    <!-- Header -->
+    <header class="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm transition-all duration-300 z-50" id="header">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center">
+                <img src="assets/HyaicoBlack.svg" alt="HYAICO Logo" class="h-8">
+            </a>
+            <nav>
+                <ul class="flex space-x-8">
+                    <li><a href="/" class="text-gray-800 hover:text-gray-600 transition-colors">Home</a></li>
+                    <li class="relative group">
+                        <a href="#apps" class="text-gray-800 hover:text-gray-600 transition-colors">Apps</a>
+                        <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                            <a href="https://justcookapp.com" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Just Cook</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50/80 to-white/80 pt-16 relative">
+        <div class="container mx-auto px-4 text-center" id="hero">
+            <h1 class="text-5xl md:text-6xl font-bold text-gray-900 mb-6 relative">
+                <span class="word-reveal">Innovative</span>
+                <span class="word-reveal">AI</span>
+                <span class="word-reveal">Solutions</span><br/>
+                <span class="word-reveal">for</span>
+                <span class="word-reveal">Everyday</span>
+                <span class="word-reveal">Life</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto reveal-text">
+                At HYAICO, we create AI-driven apps that simplify life and empower users.
+            </p>
+            <a href="#apps" class="inline-block bg-gray-900 text-white px-8 py-3 rounded-md hover:bg-gray-800 transform hover:scale-105 transition-all duration-200 reveal-button">
+                Explore Our Apps
+            </a>
+        </div>
+    </section>
+
+    <!-- Apps Section -->
+    <section id="apps" class="py-20 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-16">Our Apps</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <a href="https://justcookapp.com" target="_blank" class="group">
+                    <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-2">
+                        <h3 class="text-2xl font-bold mb-4">Just Cook</h3>
+                        <p class="text-gray-600 mb-4">AI-powered cooking made easy</p>
+                        <span class="text-gray-900 font-medium inline-flex items-center">
+                            Learn More
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-8 md:mb-0">
+                    <img src="assets/HyaicoBlack.svg" alt="HYAICO Logo" class="h-8">
+                </div>
+                <div >
+                    <p class="text-center text-gray-500 text-sm">
+                        © <script>document.write(new Date().getFullYear())</script> HYAICO. All rights reserved.
+                    </p>
+                </div>
+                <nav>
+                    <ul class="flex space-x-8">
+                        <li><a href="/" class="text-gray-600 hover:text-gray-900 transition-colors">Home</a></li>
+                        <li><a href="#apps" class="text-gray-600 hover:text-gray-900 transition-colors">Apps</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 
