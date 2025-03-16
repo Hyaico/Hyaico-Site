@@ -18,7 +18,7 @@
   - Include the following links:  
     - **Home**  
     - **Apps** (dropdown or link to a dedicated section/page)  
-      - **Just Cook** → Links to [https://justcookapp.com](https://justcookapp.com)  
+      - **Just Cooked** → Links to [https://justcooked.app](https://justcooked.app)  
 
 ---
 
@@ -37,11 +37,11 @@
 
 ## **Apps Section**  
 - Header: "Our Apps"  
-- Clean layout with individual clickable cards for each app (starting with Just Cook)  
+- Clean layout with individual clickable cards for each app (starting with Just Cooked)  
 - Example:  
-    - **Just Cook**  
+    - **Just Cooked**  
       - Short tagline (e.g., "AI-powered cooking made easy")  
-      - Link to [https://justcookapp.com](https://justcookapp.com)  
+      - Link to [https://justcooked.app](https://justcooked.app)  
       - Smooth hover animation (e.g., lift effect)  
 
 ---
