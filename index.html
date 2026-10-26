@@ -1,115 +1,475 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HYAICO - Innovative AI Solutions</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>HYAICO — Intelligence, made everyday</title>
+  <meta name="description" content="HYAICO builds AI-native products that take care of the hard parts of everyday life. Makers of Just Cooked.">
+  <meta name="theme-color" content="#06060a">
+  <meta name="color-scheme" content="dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="HYAICO — Intelligence, made everyday">
+  <meta property="og:description" content="AI-native products that take care of the hard parts of everyday life. Makers of Just Cooked.">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script>document.documentElement.classList.replace('no-js', 'js');</script>
 </head>
-<body class="font-['Inter'] bg-white text-gray-900 overflow-hidden">
-    <!-- Particle Canvas -->
-    <canvas id="particles"></canvas>
+<body class="is-loading">
 
-    <!-- Header Background -->
-    <div class="fixed w-full h-24 z-40 pointer-events-none" style="background: linear-gradient(to bottom, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%); backdrop-filter: blur(4px); -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);"></div>
+  <!-- Ambient layers -->
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"><span></span></div>
 
-    <!-- Header Content -->
-    <header class="fixed w-full z-50 transition-all duration-300 pointer-events-none" id="header">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="flex items-center pointer-events-auto">
-                <img src="assets/HyaicoBlack.svg" alt="HYAICO Logo" class="h-8 opacity-90 hover:opacity-100 transition-opacity">
-            </a>
-            
-            <!-- Apps Button integrated back into header layout for perfect spacing -->
-            <button onclick="openAppsModal()" class="pointer-events-auto bg-gray-900 text-white px-6 py-2.5 rounded-full font-medium hover:bg-gray-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 group flex items-center space-x-2">
-                <span>Our Apps</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-            </button>
+  <!-- Custom cursor (pointer devices only) -->
+  <div class="cursor" aria-hidden="true">
+    <div class="cursor__dot"></div>
+    <div class="cursor__ring"><span class="cursor__label"></span></div>
+  </div>
+
+  <!-- Preloader -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__inner">
+      <svg class="loader__mark" viewBox="0 0 102 100" aria-hidden="true">
+        <path d="M0.8125 1.3125H20.625V26.8125H81.375V1.3125H101.25V99H81.375V43.75H20.625V99H0.8125V1.3125Z"/>
+      </svg>
+      <div class="loader__count"><span data-count>0</span><small>%</small></div>
+      <div class="loader__bar"><span></span></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#top" class="nav__logo" aria-label="HYAICO — back to top" data-cursor="link">
+        <img src="assets/HyaicoWhite.svg" alt="HYAICO" width="124" height="20">
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#vision" data-cursor="link">Vision</a>
+        <a href="#work" data-cursor="link">What we do</a>
+        <a href="#apps" data-cursor="link">Apps</a>
+        <a href="#process" data-cursor="link">Process</a>
+      </nav>
+
+      <div class="nav__actions">
+        <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--sm btn--light nav__cta" data-magnetic data-cursor="link">
+          <img src="assets/Icon.svg" alt="" class="nav__cta-icon" width="18" height="18">
+          <span>Just Cooked</span>
+          <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg>
+        </a>
+        <button class="nav__toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
+          <span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile menu -->
+  <div class="menu" id="menu" aria-hidden="true">
+    <div class="menu__inner">
+      <p class="menu__eyebrow">Menu</p>
+      <nav class="menu__links" aria-label="Mobile">
+        <a href="#vision"><span>01</span>Vision</a>
+        <a href="#work"><span>02</span>What we do</a>
+        <a href="#apps"><span>03</span>Apps</a>
+        <a href="#process"><span>04</span>Process</a>
+        <a href="#contact"><span>05</span>Contact</a>
+      </nav>
+      <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--jc menu__cta">
+        <img src="assets/Icon.svg" alt="" width="20" height="20">
+        <span>Open Just Cooked</span>
+        <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="hero">
+      <div class="hero__scene" aria-hidden="true">
+        <canvas id="scene"></canvas>
+        <div class="hero__fallback"></div>
+      </div>
+
+      <div class="hero__content container">
+        <p class="eyebrow hero__eyebrow"><span class="eyebrow__dot"></span>Applied intelligence studio</p>
+        <h1 class="hero__title">Intelligence,<br><em>made everyday.</em></h1>
+        <p class="hero__sub">We build AI-native products that take care of the hard parts of daily life, so it feels simpler, faster and a little more delightful.</p>
+        <div class="hero__actions">
+          <a href="#work" class="btn btn--light" data-magnetic data-cursor="link">
+            <span>See what we build</span>
+            <svg class="btn__arrow btn__arrow--down" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"/></svg>
+          </a>
+          <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--ghost" data-magnetic data-cursor="link">
+            <img src="assets/Icon.svg" alt="" width="18" height="18" class="btn__icon">
+            <span>Meet Just Cooked</span>
+            <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg>
+          </a>
         </div>
-    </header>
+      </div>
 
-    <!-- Hero Section -->
-    <section class="min-h-screen flex items-center justify-center pt-16 relative overflow-hidden bg-transparent">
-        <div class="container mx-auto px-4 text-center relative z-10" id="hero">
-            <h1 class="text-5xl md:text-7xl font-bold text-gray-900 mb-6 relative tracking-tight">
-                <span class="word-reveal">Innovative</span>
-                <span class="word-reveal">AI</span>
-                <span class="word-reveal">Solutions</span><br/>
-                <span class="word-reveal">for</span>
-                <span class="word-reveal">Everyday</span>
-                <span class="word-reveal">Life</span>
-            </h1>
-            <p class="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto reveal-text font-light">
-                At HYAICO, we create AI-driven apps that simplify life and empower users.
-            </p>
-            <button onclick="openAppsModal()" class="inline-block bg-gray-900 text-white px-8 py-4 rounded-full font-medium reveal-button hover:bg-gray-800 transition-colors">
-                Explore Our Apps
-            </button>
+      <div class="hero__footer container">
+        <a href="#vision" class="scroll-cue" data-cursor="link" aria-label="Scroll to vision">
+          <span class="scroll-cue__line"></span>
+          <span class="scroll-cue__text">Scroll</span>
+        </a>
+        <div class="hero__meta">
+          <span class="hero__meta-item"><span class="live-dot"></span>Now shipping — Just Cooked</span>
         </div>
+      </div>
     </section>
 
-    <!-- Apps Modal (Overhauled) -->
-    <div id="appsModal" class="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm opacity-0 transition-opacity duration-500 modal-backdrop" onclick="closeAppsModal()"></div>
-        
-        <!-- Modal Content Container -->
-        <div class="relative w-full max-w-2xl mx-4 opacity-0 scale-95 transition-all duration-500 modal-content" style="transform-origin: center center;">
-            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-                <!-- Header area of modal -->
-                <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Ecosystem</h2>
-                    <button onclick="closeAppsModal()" class="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-100 rounded-full p-2 transition-colors shadow-sm border border-gray-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                
-                <!-- Content area -->
-                <div class="p-8">
-                    <a href="https://justcooked.app" target="_blank" class="group block relative">
-                        <!-- High quality subtle gradient hover glow (neutral/monochrome instead of blue) -->
-                        <div class="absolute -inset-0.5 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
-                        <div class="bg-white border border-gray-100 group-hover:border-gray-200 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 relative z-10 flex items-center justify-between">
-                            <div class="flex items-center space-x-6">
-                                <div class="w-16 h-16 rounded-2xl shadow-sm border border-gray-50 flex items-center justify-center overflow-hidden transform group-hover:scale-105 transition-all duration-500 group-hover:shadow-md bg-white">
-                                    <img src="assets/Icon.svg" alt="Just Cooked Icon" class="w-full h-full object-cover transition-transform duration-500 group-hover:rotate-3">
-                                </div>
-                                <div>
-                                    <h3 class="text-2xl font-bold text-gray-900 mb-1 group-hover:text-black transition-colors duration-300">Just Cooked</h3>
-                                    <p class="text-gray-500 font-light">AI-powered cooking made easy</p>
-                                </div>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:bg-gray-900 group-hover:border-gray-900 group-hover:text-white transition-all duration-500 text-gray-400 group-hover:shadow-md">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform group-hover:translate-x-1 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>Applied AI</span><i></i>
+        <span>Consumer products</span><i></i>
+        <span>Design-led engineering</span><i></i>
+        <span>Just Cooked</span><i></i>
+        <span>Private by design</span><i></i>
+        <span>Built for everyone</span><i></i>
+        <span>Applied AI</span><i></i>
+        <span>Consumer products</span><i></i>
+        <span>Design-led engineering</span><i></i>
+        <span>Just Cooked</span><i></i>
+        <span>Private by design</span><i></i>
+        <span>Built for everyone</span><i></i>
+      </div>
     </div>
 
-    <!-- Footer (Fixed at bottom) -->
-    <footer class="fixed bottom-0 w-full py-6 bg-transparent z-40 pointer-events-none">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-center items-center">
-                <p class="text-center text-gray-400 text-sm font-light tracking-wide">
-                    &copy; <script>document.write(new Date().getFullYear())</script> HYAICO. All rights reserved.
-                </p>
-            </div>
+    <!-- ============ VISION ============ -->
+    <section class="vision section" id="vision">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow"><span class="eyebrow__num">01</span>Vision</p>
         </div>
-    </footer>
+        <p class="vision__text" data-scrub-words>
+          The best technology disappears. We're building AI that understands the small, daily moments — what to cook, what to do next, what actually matters — and quietly takes care of them, so you can get on with living.
+        </p>
+        <div class="vision__foot" data-reveal-group>
+          <div class="vision__pill">
+            <span class="vision__pill-label">Human first</span>
+            <p>Technology should adapt to people, never the other way round.</p>
+          </div>
+          <div class="vision__pill">
+            <span class="vision__pill-label">Quietly powerful</span>
+            <p>Frontier intelligence, delivered with the restraint of good design.</p>
+          </div>
+          <div class="vision__pill">
+            <span class="vision__pill-label">Always improving</span>
+            <p>We ship, we listen, we refine. A product is never finished.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <script src="script.js"></script>
+    <!-- ============ WHAT WE DO ============ -->
+    <section class="work section" id="work">
+      <div class="container">
+        <div class="section__head section__head--split">
+          <div>
+            <p class="eyebrow" data-reveal><span class="eyebrow__num">02</span>What we do</p>
+            <h2 class="section__title" data-split>Products that only make sense <em>because AI is built in.</em></h2>
+          </div>
+          <p class="section__lead" data-reveal>We don't bolt intelligence onto existing ideas. We start with what models can do today and design the product outward from there.</p>
+        </div>
+
+        <div class="bento" data-reveal-group>
+          <!-- 1. Large demo card -->
+          <article class="card card--wide card--tall" data-cursor="link">
+            <div class="card__visual demo" aria-hidden="true">
+              <div class="demo__window">
+                <div class="demo__bar"><i></i><i></i><i></i><span>justcooked.app</span></div>
+                <div class="demo__body">
+                  <p class="demo__prompt">What's in your kitchen?</p>
+                  <div class="demo__chips">
+                    <span class="demo__chip">🥚 Eggs</span>
+                    <span class="demo__chip">🍅 Tomatoes</span>
+                    <span class="demo__chip">🧀 Feta</span>
+                    <span class="demo__chip">🌿 Spinach</span>
+                  </div>
+                  <div class="demo__thinking"><i></i><i></i><i></i></div>
+                  <div class="demo__result">
+                    <div class="demo__result-head">
+                      <span class="demo__result-tag">Recipe</span>
+                      <span class="demo__result-time">25 min · Easy</span>
+                    </div>
+                    <h4>Baked shakshuka with feta</h4>
+                    <ul>
+                      <li><b>1</b>Soften onion, garlic and cumin.</li>
+                      <li><b>2</b>Add tomatoes and simmer until rich.</li>
+                      <li><b>3</b>Crack in the eggs. Crumble feta. Bake.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__label">AI-native</p>
+              <h3 class="card__title">Products that think with you</h3>
+              <p class="card__text">From a handful of ingredients to a dinner you'll actually cook. That's intelligence doing the hard part, quietly.</p>
+            </div>
+          </article>
+
+          <!-- 2. Design-led -->
+          <article class="card" data-cursor="link">
+            <div class="card__visual layers" aria-hidden="true">
+              <div class="layers__stack">
+                <i></i><i></i><i></i>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__label">Craft</p>
+              <h3 class="card__title">Design-led engineering</h3>
+              <p class="card__text">Every pixel and every millisecond is deliberate. Great products feel inevitable.</p>
+            </div>
+          </article>
+
+          <!-- 3. Private -->
+          <article class="card" data-cursor="link">
+            <div class="card__visual shield" aria-hidden="true">
+              <div class="shield__rings"><i></i><i></i><i></i></div>
+              <svg class="shield__icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.4 3 8.5 7 9.6 4-1.1 7-5.2 7-9.6V6l-7-3Z"/><path d="m9.5 12 1.8 1.8L15 10"/></svg>
+            </div>
+            <div class="card__body">
+              <p class="card__label">Trust</p>
+              <h3 class="card__title">Private by design</h3>
+              <p class="card__text">Your data is yours. We treat privacy as a constraint we design within, not a feature we add later.</p>
+            </div>
+          </article>
+
+          <!-- 4. Shipped -->
+          <article class="card" data-cursor="link">
+            <div class="card__visual ticks" aria-hidden="true">
+              <div class="ticks__row">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <div class="ticks__labels"><span>v1.0</span><span>v1.4</span><span>v2.0</span></div>
+            </div>
+            <div class="card__body">
+              <p class="card__label">Momentum</p>
+              <h3 class="card__title">Shipped, not slide-decked</h3>
+              <p class="card__text">We release real products to real people, then refine them relentlessly.</p>
+            </div>
+          </article>
+
+          <!-- 5. Stack -->
+          <article class="card card--wide card--short" data-cursor="link">
+            <div class="card__body card__body--row">
+              <div>
+                <p class="card__label">Built on the frontier</p>
+                <h3 class="card__title">The best models, the right way</h3>
+              </div>
+              <div class="tags" aria-hidden="true">
+                <div class="tags__track">
+                  <span>Frontier models</span><span>On-device inference</span><span>Native iOS &amp; Android</span><span>Realtime pipelines</span><span>Evals-first</span><span>Edge delivery</span>
+                  <span>Frontier models</span><span>On-device inference</span><span>Native iOS &amp; Android</span><span>Realtime pipelines</span><span>Evals-first</span><span>Edge delivery</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ APPS / JUST COOKED ============ -->
+    <section class="apps section" id="apps">
+      <div class="apps__glow" aria-hidden="true"></div>
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow"><span class="eyebrow__num">03</span>Our apps</p>
+        </div>
+
+        <div class="jc">
+          <div class="jc__copy">
+            <div class="jc__brand" data-reveal>
+              <img src="assets/Icon.svg" alt="Just Cooked app icon" class="jc__icon" width="64" height="64">
+              <div>
+                <p class="jc__kicker">App 01 — Live now</p>
+                <h2 class="jc__title">Just Cooked</h2>
+              </div>
+            </div>
+            <p class="jc__tagline" data-split><em>AI-powered cooking,</em> made easy.</p>
+            <p class="jc__text" data-reveal>Tell Just Cooked what you've got and how much time you have. It turns it into a recipe you'll genuinely want to make, step by step.</p>
+            <ul class="jc__features" data-reveal-group>
+              <li><svg viewBox="0 0 16 16"><path d="m3 8.5 3 3 7-7"/></svg>Pantry to plate in seconds</li>
+              <li><svg viewBox="0 0 16 16"><path d="m3 8.5 3 3 7-7"/></svg>Clear, step-by-step guidance</li>
+              <li><svg viewBox="0 0 16 16"><path d="m3 8.5 3 3 7-7"/></svg>Made for real kitchens, not test kitchens</li>
+            </ul>
+            <div class="jc__actions" data-reveal>
+              <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--jc" data-magnetic data-cursor="link">
+                <span>Open justcooked.app</span>
+                <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg>
+              </a>
+              <span class="jc__mono">JC</span>
+            </div>
+          </div>
+
+          <div class="jc__stage" data-cursor-text="Open" data-reveal>
+            <span class="jc__watermark" aria-hidden="true">JC</span>
+            <a href="https://justcooked.app" target="_blank" rel="noopener" class="phone-link" aria-label="Open Just Cooked">
+              <div class="phone" id="phone">
+                <div class="phone__screen">
+                  <div class="phone__notch"></div>
+                  <div class="app">
+                    <div class="app__status"><span>9:41</span><span class="app__status-icons"><i></i><i></i><i></i></span></div>
+                    <div class="app__head">
+                      <img src="assets/Icon.svg" alt="" width="28" height="28">
+                      <span>Just Cooked</span>
+                    </div>
+                    <p class="app__greet">What's in your<br>kitchen tonight?</p>
+                    <div class="app__chips">
+                      <span>🥚 Eggs</span><span>🍅 Tomatoes</span><span>🧀 Feta</span><span>🌿 Spinach</span><span class="app__chip-add">+ Add</span>
+                    </div>
+                    <div class="app__cta">Cook something ✦</div>
+                    <div class="app__card">
+                      <div class="app__card-img"></div>
+                      <div class="app__card-body">
+                        <span class="app__card-tag">Tonight's pick</span>
+                        <strong>Baked shakshuka with feta</strong>
+                        <span class="app__card-meta">25 min · 2 servings · Easy</span>
+                      </div>
+                    </div>
+                    <div class="app__steps">
+                      <div class="app__step"><b>1</b><span>Soften onion, garlic and cumin</span></div>
+                      <div class="app__step"><b>2</b><span>Add tomatoes, simmer until rich</span></div>
+                      <div class="app__step app__step--dim"><b>3</b><span>Crack in eggs, crumble feta, bake</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div class="apps__next" data-reveal>
+          <div class="apps__next-inner">
+            <p class="card__label">App 02</p>
+            <h3>Something new is in the kitchen.</h3>
+            <p>The next HYAICO product is in development. Follow Just Cooked to be first to hear.</p>
+          </div>
+          <div class="apps__next-glyph" aria-hidden="true">?</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROCESS (pinned horizontal on desktop) ============ -->
+    <section class="process section" id="process">
+      <div class="process__pin">
+        <div class="container process__head">
+          <p class="eyebrow" data-reveal><span class="eyebrow__num">04</span>How we build</p>
+          <h2 class="section__title" data-split>Four steps. <em>Endlessly repeated.</em></h2>
+        </div>
+        <div class="process__track" id="processTrack">
+          <article class="panel">
+            <span class="panel__num">01</span>
+            <h3 class="panel__title">Observe</h3>
+            <p class="panel__text">We start with a real, daily problem, never with a technology looking for one.</p>
+            <div class="panel__art panel__art--observe" aria-hidden="true"><i></i><i></i><i></i></div>
+          </article>
+          <article class="panel">
+            <span class="panel__num">02</span>
+            <h3 class="panel__title">Model</h3>
+            <p class="panel__text">We prototype with the best models available and design around what they truly do well.</p>
+            <div class="panel__art panel__art--model" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </article>
+          <article class="panel">
+            <span class="panel__num">03</span>
+            <h3 class="panel__title">Ship</h3>
+            <p class="panel__text">We release early, listen hard and refine until it feels effortless.</p>
+            <div class="panel__art panel__art--ship" aria-hidden="true"><i></i></div>
+          </article>
+          <article class="panel panel--accent">
+            <span class="panel__num">04</span>
+            <h3 class="panel__title">Repeat</h3>
+            <p class="panel__text">Great products are never finished. Neither are we.</p>
+            <div class="panel__art panel__art--repeat" aria-hidden="true"><i></i></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT / CTA ============ -->
+    <section class="cta section" id="contact">
+      <div class="cta__glow" aria-hidden="true"></div>
+      <div class="container cta__inner">
+        <p class="eyebrow" data-reveal><span class="eyebrow__num">05</span>Contact</p>
+        <h2 class="cta__title" data-split>Let's build <em>what's next.</em></h2>
+        <p class="cta__text" data-reveal>Partnerships, press, or simply curious. We'd love to hear from you.</p>
+        <div class="cta__actions" data-reveal-group>
+          <a href="mailto:hello@hyaico.com" class="btn btn--light btn--lg" data-magnetic data-cursor="link">
+            <span>hello@hyaico.com</span>
+            <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg>
+          </a>
+          <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--ghost btn--lg" data-magnetic data-cursor="link">
+            <img src="assets/Icon.svg" alt="" width="18" height="18" class="btn__icon">
+            <span>Try Just Cooked</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="assets/HyaicoWhite.svg" alt="HYAICO" width="140" height="23">
+        <p>AI-native products for everyday life.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <p class="footer__heading">Company</p>
+          <a href="#vision">Vision</a>
+          <a href="#work">What we do</a>
+          <a href="#process">Process</a>
+          <a href="#contact">Contact</a>
+        </div>
+        <div class="footer__col">
+          <p class="footer__heading">Products</p>
+          <a href="https://justcooked.app" target="_blank" rel="noopener">Just Cooked ↗</a>
+          <span class="footer__soon">App 02 — soon</span>
+        </div>
+        <div class="footer__col">
+          <p class="footer__heading">Connect</p>
+          <a href="mailto:hello@hyaico.com">hello@hyaico.com</a>
+          <a href="#top" class="footer__top" data-cursor="link">Back to top ↑</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__wordmark" aria-hidden="true">
+      <img src="assets/HyaicoWhite.svg" alt="">
+    </div>
+    <div class="container footer__bottom">
+      <span>© <span id="year">2026</span> HYAICO. All rights reserved.</span>
+      <span>Intelligence, made everyday.</span>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/SplitText.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.1/dist/lenis.min.js"></script>
+  <script type="module" src="js/scene.js"></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
