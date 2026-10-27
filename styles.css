@@ -203,20 +203,35 @@ html.no-webgl .story__text--jc::after { content: ""; position: absolute; right: 
 @keyframes cue { 0% { top: -14px; } 70%, 100% { top: 100%; } }
 
 /* ---------- Ending ---------- */
-.outro { position: relative; z-index: 2; min-height: 100vh; display: flex; align-items: flex-end; overflow: hidden; }
-.outro__inner { position: relative; width: 100%; max-width: var(--container); margin-inline: auto; padding: 36vh var(--gutter) 28px; }
-.outro__line { font-size: clamp(2.2rem, 5.2vw, 5rem); line-height: 1; letter-spacing: -0.04em; font-weight: 500; text-align: center; margin-bottom: clamp(40px, 7vw, 100px); text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6); }
+.outro {
+  position: relative; z-index: 2; min-height: 100vh; display: flex; align-items: flex-end; overflow: hidden;
+  background: linear-gradient(180deg, transparent 0%, rgba(6, 6, 10, 0.9) 38%, var(--bg) 60%);
+}
+.outro::before { content: ""; position: absolute; left: 50%; bottom: -12%; width: 130vw; max-width: 1700px; aspect-ratio: 2 / 1; translate: -50% 0; pointer-events: none; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(124, 92, 255, 0.2), rgba(69, 227, 255, 0.07) 45%, transparent 70%); }
+.outro__inner { position: relative; width: 100%; max-width: var(--container); margin-inline: auto; padding: 32vh var(--gutter) 28px; display: grid; justify-items: center; }
+.outro__line {
+  position: relative; display: inline-block; font-size: clamp(3rem, 8.6vw, 8.8rem); line-height: 0.96; letter-spacing: -0.045em; font-weight: 500; text-align: center;
+  margin-bottom: clamp(56px, 8vw, 120px); padding-bottom: 0.18em; text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6);
+}
 .outro__line em { font-family: var(--font-serif); font-style: italic; font-weight: 400; background: linear-gradient(92deg, #fff 0%, #d2c8ff 45%, #8feaff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.08em; }
-/* the giant wordmark: the particles settle onto this; the letters stay faint so the light shows through */
+/* the underline draws itself once the line is in view */
+.outro__line::after {
+  content: ""; position: absolute; left: 10%; right: 10%; bottom: 0; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--violet) 20%, var(--cyan) 80%, transparent); box-shadow: 0 0 18px rgba(69, 227, 255, 0.5);
+  transform: scaleX(0); transition: transform 1.3s var(--ease-out) 0.45s;
+}
+.outro__line.is-revealed::after { transform: scaleX(1); }
 .outro__wordmark {
-  position: relative; aspect-ratio: 619 / 101; overflow: hidden;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0.05));
-  -webkit-mask-image: url("assets/HyaicoWhite.svg"); -webkit-mask-size: 100% auto; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center;
-  mask-image: url("assets/HyaicoWhite.svg"); mask-size: 100% auto; mask-repeat: no-repeat; mask-position: center;
+  position: relative; width: 100%; aspect-ratio: 619 / 101; overflow: hidden;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.24) 50%, rgba(255, 255, 255, 0.07));
+  -webkit-mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(#000 20%, transparent 100%);
+  -webkit-mask-size: 100% auto, 100% 100%; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-composite: source-in;
+  mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(#000 20%, transparent 100%);
+  mask-size: 100% auto, 100% 100%; mask-repeat: no-repeat; mask-position: center; mask-composite: intersect;
 }
 .outro__wordmark i { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(69, 227, 255, 0.55) 50%, transparent 65%); transform: translateX(-100%); animation: wmsweep 7s var(--ease-in-out) infinite; }
 @keyframes wmsweep { 0% { transform: translateX(-100%); } 45%, 100% { transform: translateX(100%); } }
-.outro__bar { display: flex; justify-content: space-between; gap: 24px; padding-top: 22px; margin-top: 22px; border-top: 1px solid var(--line); font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.06em; color: var(--muted); }
+.outro__bar { width: 100%; display: flex; justify-content: space-between; gap: 24px; padding-top: 22px; margin-top: 22px; border-top: 1px solid var(--line); font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.06em; color: var(--muted); }
 .outro__bar a { transition: color 0.3s; }
 .outro__bar a:hover { color: #fff; }
 

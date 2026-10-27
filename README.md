@@ -5,21 +5,21 @@ A single-page, almost wordless, scroll-driven 3D experience for HYAICO. Built wi
 ## The experience
 
 1. **Loader** — a laser scans the HYAICO wordmark into existence, it pulses, then the dark veil lifts to show the same wordmark already formed from particles behind it. A flash and a particle burst hand over to the page.
-2. **The story** — one particle system (60,000 points on desktop, 28,000 on phones) morphs between forms as you scroll, with camera moves and swirl scrubbed by the scroll position:
-   - a glowing planet horizon beneath "Built for *what's next*."
-   - a double helix beside "Things that *should exist*."
-   - a spiral galaxy under "Ideas, *in motion*."
-   - HYAICO itself, in particles
-   - dust gathering around a modelled 3D phone running Just Cooked, beside the Just Cooked logotype, "Home cooking, *made easy*.", the App Store and Google Play buttons and justcooked.app. The screen cross-fades through the app's Home, Next Meal and Recipe screens as you keep scrolling.
-3. **Ending** — the phone slips away and the particles gather one last time into a giant glowing HYAICO at the foot of the page, under "Built for *what's next*."
+2. **The story** — one particle system (60,000 points on desktop, 28,000 on phones) morphs between forms as you scroll, with real geometry riding along and camera moves scrubbed by the scroll position:
+   - a planet horizon with a glowing limb line, beneath "Built for *what's next*."
+   - a double helix with two light strands, beside "Things that *should exist*."
+   - a spiral galaxy with a bright core, under "Ideas, *in motion*."
+   - HYAICO in particles, through which a chrome HYAICO surfaces with a travelling light
+   - the stage: the particles thin to distant dust, and the Just Cooked phone rises through a dark reflective floor with a holographic grid and a column of light behind it, beside the Just Cooked logotype, "For when *food feels hard*.", the App Store and Google Play buttons and justcooked.app. The screen cross-fades Home → Next Meal → Recipe as you keep scrolling.
+3. **Ending** — the phone sinks back into the floor, the stage dims, and a big centred "Built for *what's next*." draws its underline above the giant masked HYAICO wordmark with a light sweep.
 
-The phone is drawn in its own pass on top of the particle layer, so neither bloom nor tone mapping touches its screen: the app shows at its true contrast, exactly as on justcooked.app. Every particle has its own parallax depth under the pointer. One scroll cue sits bottom-centre and disappears once you move.
+The phone is drawn in its own pass on top of the particle layer, so neither bloom nor tone mapping touches its screen: the app shows at its true contrast, exactly as on justcooked.app, inside a rounded screen that never pokes past the glass. Every particle has its own parallax depth under the pointer. One scroll cue sits bottom-centre and disappears once you move.
 
 ## Tech
 
 | Concern | Tool |
 | --- | --- |
-| 3D | [Three.js](https://threejs.org) r170 via ES-module import map (jsDelivr): custom particle shader, SVGLoader (wordmark), MeshSurfaceSampler, RoomEnvironment, bloom on the particle layer only |
+| 3D | [Three.js](https://threejs.org) r170 via ES-module import map (jsDelivr): custom particle shader, SVGLoader (wordmark + chrome letters), MeshSurfaceSampler, TubeGeometry strands, Reflector floor, custom grid and floor shaders, RoomEnvironment, bloom on the particle layer only |
 | Animation | [GSAP](https://gsap.com) 3.13 + ScrollTrigger (pinned story), SplitText, ScrambleText (cdnjs) |
 | Smooth scroll | [Lenis](https://lenis.darkroom.engineering) 1.3 (jsDelivr) |
 | Type | Geist, Geist Mono, Instrument Serif (Google Fonts) |
@@ -42,10 +42,10 @@ python -m http.server 8765
 ├── index.html             # The single page: loader, nav, pinned story, ending
 ├── styles.css             # Design tokens, components, responsive rules
 ├── js/
-│   ├── scene.js           # Particle layer (forms, camera keyframes) + phone layer (screens, halo, aura)
+│   ├── scene.js           # Particle layer (forms, glowing geometry, chrome letters) + product layer (phone, floor, grid)
 │   └── main.js            # Loader hand-over, smooth scroll, scroll story, ending, cursor
 ├── assets/
-│   ├── HyaicoWhite.svg    # Wordmark — the UI, the loader, the particle source and the ending
+│   ├── HyaicoWhite.svg    # Wordmark — the UI, the loader, the particle and chrome source, the ending
 │   ├── HyaicoBlack.svg    # Wordmark (dark on light)
 │   ├── JustCookedLogo.svg # Just Cooked logotype (icon + name), from the Just Cooked site
 │   ├── Icon.svg           # Just Cooked app icon
@@ -62,7 +62,7 @@ python -m http.server 8765
 ## Editing
 
 - The text beats live in `index.html` inside `#story`; their timing is in `initStory()` in `js/main.js` (positions are fractions of the pinned scroll, which is `STORY_LEN` long).
-- Where each form is held, and which screen the phone shows when, is in `BEATS` and `applyState()` in `js/scene.js`; brightness and tint per form are in `uBright` / `uTint`; camera keyframes in `CAM`.
+- Where each form is held, when the chrome letters and the stage appear, and which screen the phone shows when, is in `BEATS` and `applyState()` in `js/scene.js`; brightness and tint per form are in `uBright` / `uTint`; camera keyframes in `CAM`.
 - The phone geometry and lighting follow the Just Cooked site's `js/scene.js`; to update its screens, drop new screen-only crops into `assets/screens/` with the same names.
 
 ## Browser support

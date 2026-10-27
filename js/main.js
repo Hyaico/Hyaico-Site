@@ -185,8 +185,10 @@
     const progress = document.querySelector('.progress span');
     ScrollTrigger.create({ start: 0, end: () => ScrollTrigger.maxScroll(window), onUpdate: (s) => { progress.style.transform = `scaleX(${s.progress})`; } });
 
-    /* Ending: the phone slips away and the particles gather into the giant wordmark */
-    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 15%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
+    /* Ending: the phone sinks back into the floor and the stage dims */
+    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 25%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
+    const wm = document.getElementById('footerWordmark');
+    if (wm) gsap.fromTo(wm, { yPercent: 28, opacity: 0.35 }, { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top bottom', end: 'bottom bottom', scrub: true } });
     const jcOut = gsap.to(jc, { opacity: 0, y: -40, filter: 'blur(10px)', ease: 'none', paused: true });
     ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 60%', scrub: true, animation: jcOut });
     document.querySelectorAll('[data-reveal]').forEach((el, i) => {
