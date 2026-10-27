@@ -29,6 +29,10 @@
     el.dataset.text = final;
     return gsap.to(el, { duration, scrambleText: { text: final, chars: CHARS, speed: 0.5, revealDelay: duration * 0.2 } });
   }
+  function splitLines(title) {
+    if (!title || !hasSplit || reduced) return null;
+    try { return new SplitText(title, { type: 'lines', mask: 'lines', linesClass: 'line' }).lines; } catch (err) { return null; }
+  }
 
   /* ------------------------------------------------------------------
      Smooth scroll
@@ -75,10 +79,9 @@
   const scrollCue = document.getElementById('scrollCue');
   let heroLines = null;
   function prepareHero() {
-    if (heroLines || !hasSplit || reduced) return;
-    const title = heroText.querySelector('.title');
-    heroLines = new SplitText(title, { type: 'lines', mask: 'lines', linesClass: 'line' }).lines;
-    gsap.set(heroLines, { yPercent: 115 });
+    if (heroLines) return;
+    heroLines = splitLines(heroText.querySelector('.title'));
+    if (heroLines) gsap.set(heroLines, { yPercent: 115 });
   }
 
   /* ------------------------------------------------------------------
@@ -170,15 +173,37 @@
         },
       },
     });
-    /* durations are fractions of the pinned scroll */
-    tl.to(heroText, { ...gone, duration: 0.07, ease: 'power2.in' }, 0.004)
-      .fromTo(helix, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, 0.13)
-      .to(helix, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.27)
-      .fromTo(galaxy, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, 0.34)
-      .to(galaxy, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.47)
-      .fromTo(jc, hidden, { ...shown, duration: 0.06, ease: 'power2.out' }, 0.555)
+    /* positions and durations are fractions of the pinned scroll */
+    tl.to(heroText, { ...gone, duration: 0.07, ease: 'power2.in' }, 0.004);
+
+    /* a titled beat: its lines rise out of their masks, hold, then leave upward */
+    function beat(el, enter, leave) {
+      const lines = splitLines(el.querySelector('.title'));
+      if (lines) {
+        tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.012, ease: 'none' }, enter)
+          .fromTo(lines, { yPercent: 115 }, { yPercent: 0, duration: 0.05, stagger: 0.014, ease: 'power3.out' }, enter)
+          .to(lines, { yPercent: -115, duration: 0.04, stagger: 0.01, ease: 'power2.in' }, leave)
+          .to(el, { opacity: 0, duration: 0.012, ease: 'none' }, leave + 0.04);
+      } else {
+        tl.fromTo(el, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, enter)
+          .to(el, { ...gone, duration: 0.05, ease: 'power2.in' }, leave);
+      }
+    }
+    beat(helix, 0.13, 0.27);
+    beat(galaxy, 0.34, 0.47);
+
+    /* Just Cooked: the block builds up piece by piece beside the phone */
+    const jcKids = jc.querySelectorAll('.jc > *');
+    tl.fromTo(jc, { opacity: 0 }, { opacity: 1, duration: 0.008, ease: 'none' }, 0.55)
+      .fromTo(jcKids, { opacity: 0, y: 36, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.035, stagger: 0.006, ease: 'power3.out' }, 0.555)
       .to(jc, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.7)
       .to({}, { duration: 0.25 });
+
+    /* which screen the phone is showing */
+    const bars = jc.querySelectorAll('.jc__screens i');
+    const setBars = (k) => bars.forEach((b) => b.classList.toggle('is-on', b.dataset.screen === k));
+    setBars(HY.screen || 'home');
+    window.addEventListener('scene:screen', (e) => setBars(e.detail));
 
     /* Progress bar */
     const progress = document.querySelector('.progress span');
@@ -190,7 +215,7 @@
     if (wm) gsap.fromTo(wm, { opacity: 0 }, { opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top 45%', end: 'top 18%', scrub: true } });
     document.querySelectorAll('[data-reveal]').forEach((el, i) => {
       gsap.fromTo(el, { opacity: 0, y: 40 }, {
-        opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.08,
+        opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.12,
         scrollTrigger: { trigger: '#outro', start: 'top 55%', once: true },
         onStart: () => { el.classList.add('is-revealed'); el.querySelectorAll('[data-scramble]').forEach((s) => scramble(s, 0.9)); },
       });
