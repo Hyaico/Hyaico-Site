@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>HYAICO — Intelligence, made everyday</title>
-  <meta name="description" content="HYAICO builds AI-native products that take care of the hard parts of everyday life. Makers of Just Cooked.">
+  <title>HYAICO — We create what should already exist</title>
+  <meta name="description" content="HYAICO is a company of innovation. We build the things that should already exist and make them genuinely helpful to people. Makers of Just Cooked.">
   <meta name="theme-color" content="#06060a">
   <meta name="color-scheme" content="dark">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="HYAICO — Intelligence, made everyday">
-  <meta property="og:description" content="AI-native products that take care of the hard parts of everyday life. Makers of Just Cooked.">
+  <meta property="og:title" content="HYAICO — We create what should already exist">
+  <meta property="og:description" content="A company of innovation. Makers of Just Cooked.">
   <meta property="og:image" content="assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
 
@@ -41,21 +41,48 @@
   <!-- Custom cursor (pointer devices only) -->
   <div class="cursor" aria-hidden="true">
     <div class="cursor__dot"></div>
-    <div class="cursor__ring"><span class="cursor__label"></span></div>
+    <div class="cursor__ring"><i class="cursor__cross"></i><span class="cursor__label"></span></div>
   </div>
 
-  <!-- Preloader -->
+  <!-- ============ PRELOADER ============ -->
   <div class="loader" id="loader" aria-hidden="true">
-    <div class="loader__inner">
-      <svg class="loader__mark" viewBox="0 0 102 100" aria-hidden="true">
-        <path d="M0.8125 1.3125H20.625V26.8125H81.375V1.3125H101.25V99H81.375V43.75H20.625V99H0.8125V1.3125Z"/>
-      </svg>
-      <div class="loader__count"><span data-count>0</span><small>%</small></div>
-      <div class="loader__bar"><span></span></div>
+    <div class="loader__panel loader__panel--top"></div>
+    <div class="loader__panel loader__panel--bottom"></div>
+    <div class="loader__seam"></div>
+    <div class="loader__ui">
+      <div class="loader__grid"></div>
+      <div class="loader__scan"></div>
+      <i class="loader__corner loader__corner--tl"></i>
+      <i class="loader__corner loader__corner--tr"></i>
+      <i class="loader__corner loader__corner--bl"></i>
+      <i class="loader__corner loader__corner--br"></i>
+      <div class="loader__hud">
+        <span class="loader__hud-item loader__hud-item--tl">HYAICO <b>//</b> SYSTEM BOOT</span>
+        <span class="loader__hud-item loader__hud-item--tr" data-loader-status>INITIALISING</span>
+        <span class="loader__hud-item loader__hud-item--bl"><span data-loader-count>000</span><b>%</b></span>
+        <span class="loader__hud-item loader__hud-item--br">WE CREATE WHAT SHOULD ALREADY EXIST</span>
+      </div>
+      <div class="loader__inner">
+        <svg class="loader__wordmark" viewBox="-6 -6 631 113" aria-hidden="true">
+          <defs>
+            <linearGradient id="loader-sweep" gradientUnits="userSpaceOnUse" x1="-700" y1="0" x2="-200" y2="0">
+              <stop offset="0" stop-color="#c9c9dc"/>
+              <stop offset="0.42" stop-color="#ffffff"/>
+              <stop offset="0.5" stop-color="#b8f3ff"/>
+              <stop offset="0.58" stop-color="#ffffff"/>
+              <stop offset="1" stop-color="#c9c9dc"/>
+            </linearGradient>
+          </defs>
+          <path class="loader__fill" fill="url(#loader-sweep)" d="M0.8125 1.3125H20.625V26.8125H81.375V1.3125H101.25V99H81.375V43.75H20.625V99H0.8125V1.3125ZM158.938 74.8125L116.25 1.3125H138.688L168.75 56.875L198.438 1.3125H220.875L178.75 74.6875V99H158.938V74.8125ZM269.188 1.3125H290.188L337.438 99H316.625L308.812 82.5625H251.75L244.188 99H223.312L269.188 1.3125ZM301 66.25L279.875 21.875L259.312 66.25H301ZM350.125 1.3125H370.062V99H350.125V1.3125ZM389.438 49.5625C389.438 42.6042 390.75 36.125 393.375 30.125C396 24.0833 399.792 18.8542 404.75 14.4375C409.75 9.97917 415.833 6.47917 423 3.9375C430.208 1.39583 438.354 0.125 447.438 0.125C455.396 0.125 462.688 0.9375 469.312 2.5625C475.979 4.14583 482.167 6.58333 487.875 9.875L478.75 24.875C477.042 23.75 475.062 22.75 472.812 21.875C470.604 21 468.229 20.2708 465.688 19.6875C463.188 19.0625 460.583 18.5833 457.875 18.25C455.208 17.9167 452.562 17.75 449.938 17.75C443.604 17.75 437.958 18.5417 433 20.125C428.042 21.6667 423.854 23.8542 420.438 26.6875C417.062 29.4792 414.479 32.8333 412.688 36.75C410.938 40.625 410.062 44.8958 410.062 49.5625C410.062 54.3958 410.979 58.8333 412.812 62.875C414.646 66.9167 417.292 70.4167 420.75 73.375C424.25 76.2917 428.5 78.5833 433.5 80.25C438.542 81.875 444.229 82.6875 450.562 82.6875C453.438 82.6875 456.292 82.4792 459.125 82.0625C461.958 81.6458 464.688 81.0833 467.312 80.375C469.979 79.625 472.542 78.75 475 77.75C477.458 76.7083 479.75 75.5833 481.875 74.375L491 89.375C485.667 92.7917 479.5 95.4792 472.5 97.4375C465.5 99.3542 458.062 100.312 450.188 100.312C440.146 100.312 431.333 99.0208 423.75 96.4375C416.167 93.8125 409.833 90.2292 404.75 85.6875C399.667 81.1042 395.833 75.7292 393.25 69.5625C390.708 63.3542 389.438 56.6875 389.438 49.5625ZM507.125 49.875C507.125 42.5 508.479 35.75 511.188 29.625C513.896 23.5 517.688 18.25 522.562 13.875C527.479 9.45833 533.354 6.04167 540.188 3.625C547.062 1.20833 554.667 0 563 0C571.292 0 578.875 1.20833 585.75 3.625C592.625 6.04167 598.5 9.45833 603.375 13.875C608.292 18.25 612.104 23.5 614.812 29.625C617.521 35.75 618.875 42.5 618.875 49.875C618.875 57.2917 617.521 64.1042 614.812 70.3125C612.104 76.4792 608.292 81.7917 603.375 86.25C598.5 90.7083 592.625 94.1875 585.75 96.6875C578.875 99.1458 571.292 100.375 563 100.375C554.667 100.375 547.062 99.1458 540.188 96.6875C533.354 94.1875 527.479 90.7083 522.562 86.25C517.688 81.7917 513.896 76.4792 511.188 70.3125C508.479 64.1042 507.125 57.2917 507.125 49.875ZM526.938 49.875C526.938 54.9167 527.833 59.4583 529.625 63.5C531.458 67.5417 533.979 71 537.188 73.875C540.438 76.7083 544.25 78.8958 548.625 80.4375C553.042 81.9792 557.833 82.75 563 82.75C568.167 82.75 572.938 81.9792 577.312 80.4375C581.729 78.8958 585.542 76.7083 588.75 73.875C591.958 71 594.479 67.5417 596.312 63.5C598.146 59.4583 599.062 54.9167 599.062 49.875C599.062 44.8333 598.146 40.3125 596.312 36.3125C594.479 32.3125 591.958 28.9375 588.75 26.1875C585.542 23.3958 581.729 21.2708 577.312 19.8125C572.938 18.3542 568.167 17.625 563 17.625C557.833 17.625 553.042 18.3542 548.625 19.8125C544.25 21.2708 540.438 23.3958 537.188 26.1875C533.979 28.9375 531.458 32.3125 529.625 36.3125C527.833 40.3125 526.938 44.8333 526.938 49.875Z"/>
+          <path class="loader__stroke" d="M0.8125 1.3125H20.625V26.8125H81.375V1.3125H101.25V99H81.375V43.75H20.625V99H0.8125V1.3125ZM158.938 74.8125L116.25 1.3125H138.688L168.75 56.875L198.438 1.3125H220.875L178.75 74.6875V99H158.938V74.8125ZM269.188 1.3125H290.188L337.438 99H316.625L308.812 82.5625H251.75L244.188 99H223.312L269.188 1.3125ZM301 66.25L279.875 21.875L259.312 66.25H301ZM350.125 1.3125H370.062V99H350.125V1.3125ZM389.438 49.5625C389.438 42.6042 390.75 36.125 393.375 30.125C396 24.0833 399.792 18.8542 404.75 14.4375C409.75 9.97917 415.833 6.47917 423 3.9375C430.208 1.39583 438.354 0.125 447.438 0.125C455.396 0.125 462.688 0.9375 469.312 2.5625C475.979 4.14583 482.167 6.58333 487.875 9.875L478.75 24.875C477.042 23.75 475.062 22.75 472.812 21.875C470.604 21 468.229 20.2708 465.688 19.6875C463.188 19.0625 460.583 18.5833 457.875 18.25C455.208 17.9167 452.562 17.75 449.938 17.75C443.604 17.75 437.958 18.5417 433 20.125C428.042 21.6667 423.854 23.8542 420.438 26.6875C417.062 29.4792 414.479 32.8333 412.688 36.75C410.938 40.625 410.062 44.8958 410.062 49.5625C410.062 54.3958 410.979 58.8333 412.812 62.875C414.646 66.9167 417.292 70.4167 420.75 73.375C424.25 76.2917 428.5 78.5833 433.5 80.25C438.542 81.875 444.229 82.6875 450.562 82.6875C453.438 82.6875 456.292 82.4792 459.125 82.0625C461.958 81.6458 464.688 81.0833 467.312 80.375C469.979 79.625 472.542 78.75 475 77.75C477.458 76.7083 479.75 75.5833 481.875 74.375L491 89.375C485.667 92.7917 479.5 95.4792 472.5 97.4375C465.5 99.3542 458.062 100.312 450.188 100.312C440.146 100.312 431.333 99.0208 423.75 96.4375C416.167 93.8125 409.833 90.2292 404.75 85.6875C399.667 81.1042 395.833 75.7292 393.25 69.5625C390.708 63.3542 389.438 56.6875 389.438 49.5625ZM507.125 49.875C507.125 42.5 508.479 35.75 511.188 29.625C513.896 23.5 517.688 18.25 522.562 13.875C527.479 9.45833 533.354 6.04167 540.188 3.625C547.062 1.20833 554.667 0 563 0C571.292 0 578.875 1.20833 585.75 3.625C592.625 6.04167 598.5 9.45833 603.375 13.875C608.292 18.25 612.104 23.5 614.812 29.625C617.521 35.75 618.875 42.5 618.875 49.875C618.875 57.2917 617.521 64.1042 614.812 70.3125C612.104 76.4792 608.292 81.7917 603.375 86.25C598.5 90.7083 592.625 94.1875 585.75 96.6875C578.875 99.1458 571.292 100.375 563 100.375C554.667 100.375 547.062 99.1458 540.188 96.6875C533.354 94.1875 527.479 90.7083 522.562 86.25C517.688 81.7917 513.896 76.4792 511.188 70.3125C508.479 64.1042 507.125 57.2917 507.125 49.875ZM526.938 49.875C526.938 54.9167 527.833 59.4583 529.625 63.5C531.458 67.5417 533.979 71 537.188 73.875C540.438 76.7083 544.25 78.8958 548.625 80.4375C553.042 81.9792 557.833 82.75 563 82.75C568.167 82.75 572.938 81.9792 577.312 80.4375C581.729 78.8958 585.542 76.7083 588.75 73.875C591.958 71 594.479 67.5417 596.312 63.5C598.146 59.4583 599.062 54.9167 599.062 49.875C599.062 44.8333 598.146 40.3125 596.312 36.3125C594.479 32.3125 591.958 28.9375 588.75 26.1875C585.542 23.3958 581.729 21.2708 577.312 19.8125C572.938 18.3542 568.167 17.625 563 17.625C557.833 17.625 553.042 18.3542 548.625 19.8125C544.25 21.2708 540.438 23.3958 537.188 26.1875C533.979 28.9375 531.458 32.3125 529.625 36.3125C527.833 40.3125 526.938 44.8333 526.938 49.875Z"/>
+        </svg>
+        <div class="loader__bar"><span></span><i></i></div>
+        <div class="loader__count"><span data-loader-count>0</span><small>%</small></div>
+      </div>
     </div>
   </div>
 
-  <!-- Navigation -->
+  <!-- ============ NAVIGATION ============ -->
   <header class="nav" id="nav">
     <div class="nav__inner">
       <a href="#top" class="nav__logo" aria-label="HYAICO — back to top" data-cursor="link">
@@ -65,7 +92,7 @@
       <nav class="nav__links" aria-label="Primary">
         <a href="#vision" data-cursor="link">Vision</a>
         <a href="#work" data-cursor="link">What we do</a>
-        <a href="#apps" data-cursor="link">Apps</a>
+        <a href="#products" data-cursor="link">Products</a>
         <a href="#process" data-cursor="link">Process</a>
       </nav>
 
@@ -89,9 +116,9 @@
       <nav class="menu__links" aria-label="Mobile">
         <a href="#vision"><span>01</span>Vision</a>
         <a href="#work"><span>02</span>What we do</a>
-        <a href="#apps"><span>03</span>Apps</a>
+        <a href="#products"><span>03</span>Products</a>
         <a href="#process"><span>04</span>Process</a>
-        <a href="#contact"><span>05</span>Contact</a>
+        <a href="#next"><span>05</span>What's next</a>
       </nav>
       <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--jc menu__cta">
         <img src="assets/Icon.svg" alt="" width="20" height="20">
@@ -111,12 +138,12 @@
       </div>
 
       <div class="hero__content container">
-        <p class="eyebrow hero__eyebrow"><span class="eyebrow__dot"></span>Applied intelligence studio</p>
-        <h1 class="hero__title">Intelligence,<br><em>made everyday.</em></h1>
-        <p class="hero__sub">We build AI-native products that take care of the hard parts of daily life, so it feels simpler, faster and a little more delightful.</p>
+        <p class="eyebrow hero__eyebrow"><span class="eyebrow__dot"></span><span data-scramble>A company of innovation</span></p>
+        <h1 class="hero__title">We create what should<br><em>already exist.</em></h1>
+        <p class="hero__sub">HYAICO exists to innovate: to build the things that should have been built by now, and to make them genuinely helpful to people.</p>
         <div class="hero__actions">
           <a href="#work" class="btn btn--light" data-magnetic data-cursor="link">
-            <span>See what we build</span>
+            <span>What we do</span>
             <svg class="btn__arrow btn__arrow--down" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"/></svg>
           </a>
           <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--ghost" data-magnetic data-cursor="link">
@@ -132,8 +159,11 @@
           <span class="scroll-cue__line"></span>
           <span class="scroll-cue__text">Scroll</span>
         </a>
-        <div class="hero__meta">
-          <span class="hero__meta-item"><span class="live-dot"></span>Now shipping — Just Cooked</span>
+        <div class="hero__hud" aria-hidden="true">
+          <span class="hud-line"><i class="live-dot"></i><span data-scramble>SYS // ONLINE</span></span>
+          <span class="hud-line"><span class="hud-line__k">TIME //</span><span id="hudTime">00:00:00</span></span>
+          <span class="hud-line"><span class="hud-line__k">RENDER //</span><span id="hudRender">WEBGL</span><span class="hud-line__sep">·</span><span id="hudFps">--</span> FPS</span>
+          <span class="hud-line"><i class="live-dot"></i><span data-scramble>NOW LIVE // JUST COOKED</span></span>
         </div>
       </div>
     </section>
@@ -141,18 +171,18 @@
     <!-- ============ MARQUEE ============ -->
     <div class="marquee" aria-hidden="true">
       <div class="marquee__track">
-        <span>Applied AI</span><i></i>
-        <span>Consumer products</span><i></i>
-        <span>Design-led engineering</span><i></i>
+        <span>Innovation</span><i></i>
+        <span>Things that should exist</span><i></i>
         <span>Just Cooked</span><i></i>
-        <span>Private by design</span><i></i>
-        <span>Built for everyone</span><i></i>
-        <span>Applied AI</span><i></i>
-        <span>Consumer products</span><i></i>
-        <span>Design-led engineering</span><i></i>
+        <span>Built to help people</span><i></i>
+        <span>Designed for the future</span><i></i>
+        <span>Shipped, not slide-decked</span><i></i>
+        <span>Innovation</span><i></i>
+        <span>Things that should exist</span><i></i>
         <span>Just Cooked</span><i></i>
-        <span>Private by design</span><i></i>
-        <span>Built for everyone</span><i></i>
+        <span>Built to help people</span><i></i>
+        <span>Designed for the future</span><i></i>
+        <span>Shipped, not slide-decked</span><i></i>
       </div>
     </div>
 
@@ -160,82 +190,93 @@
     <section class="vision section" id="vision">
       <div class="container">
         <div class="section__head" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__num">01</span>Vision</p>
+          <p class="eyebrow"><span class="eyebrow__num">01</span><span data-scramble>Vision</span></p>
         </div>
         <p class="vision__text" data-scrub-words>
-          The best technology disappears. We're building AI that understands the small, daily moments — what to cook, what to do next, what actually matters — and quietly takes care of them, so you can get on with living.
+          Some things should already exist. The tools that make a day easier. The ideas everyone has had and nobody has built. HYAICO exists to build them properly, and to put them in the hands of the people who need them.
         </p>
         <div class="vision__foot" data-reveal-group>
           <div class="vision__pill">
-            <span class="vision__pill-label">Human first</span>
-            <p>Technology should adapt to people, never the other way round.</p>
+            <span class="vision__pill-label"><span class="vision__pill-num">01</span>Innovate</span>
+            <p>We look for the gaps: the obvious things that are strangely missing from the world.</p>
           </div>
           <div class="vision__pill">
-            <span class="vision__pill-label">Quietly powerful</span>
-            <p>Frontier intelligence, delivered with the restraint of good design.</p>
+            <span class="vision__pill-label"><span class="vision__pill-num">02</span>Create</span>
+            <p>Then we build them, with the care and craft they deserved all along.</p>
           </div>
           <div class="vision__pill">
-            <span class="vision__pill-label">Always improving</span>
-            <p>We ship, we listen, we refine. A product is never finished.</p>
+            <span class="vision__pill-label"><span class="vision__pill-num">03</span>Help people</span>
+            <p>Every product has to make someone's day better. Otherwise it doesn't ship.</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ============ WHAT WE DO ============ -->
-    <section class="work section" id="work">
+    <section class="work section dotgrid" id="work">
       <div class="container">
         <div class="section__head section__head--split">
           <div>
-            <p class="eyebrow" data-reveal><span class="eyebrow__num">02</span>What we do</p>
-            <h2 class="section__title" data-split>Products that only make sense <em>because AI is built in.</em></h2>
+            <p class="eyebrow" data-reveal><span class="eyebrow__num">02</span><span data-scramble>What we do</span></p>
+            <h2 class="section__title" data-split>Things that <em>should have existed</em> by now.</h2>
           </div>
-          <p class="section__lead" data-reveal>We don't bolt intelligence onto existing ideas. We start with what models can do today and design the product outward from there.</p>
+          <p class="section__lead" data-reveal>We find the gaps between what people need and what exists, then close them with products built for the future.</p>
         </div>
 
         <div class="bento" data-reveal-group>
-          <!-- 1. Large demo card -->
-          <article class="card card--wide card--tall" data-cursor="link">
-            <div class="card__visual demo" aria-hidden="true">
-              <div class="demo__window">
-                <div class="demo__bar"><i></i><i></i><i></i><span>justcooked.app</span></div>
-                <div class="demo__body">
-                  <p class="demo__prompt">What's in your kitchen?</p>
-                  <div class="demo__chips">
-                    <span class="demo__chip">🥚 Eggs</span>
-                    <span class="demo__chip">🍅 Tomatoes</span>
-                    <span class="demo__chip">🧀 Feta</span>
-                    <span class="demo__chip">🌿 Spinach</span>
-                  </div>
-                  <div class="demo__thinking"><i></i><i></i><i></i></div>
-                  <div class="demo__result">
-                    <div class="demo__result-head">
-                      <span class="demo__result-tag">Recipe</span>
-                      <span class="demo__result-time">25 min · Easy</span>
-                    </div>
-                    <h4>Baked shakshuka with feta</h4>
-                    <ul>
-                      <li><b>1</b>Soften onion, garlic and cumin.</li>
-                      <li><b>2</b>Add tomatoes and simmer until rich.</li>
-                      <li><b>3</b>Crack in the eggs. Crumble feta. Bake.</li>
-                    </ul>
-                  </div>
-                </div>
+          <!-- 1. Blueprint build sequence -->
+          <article class="card card--wide card--tall hud" data-cursor="link">
+            <i class="hud__c hud__c--tl"></i><i class="hud__c hud__c--tr"></i><i class="hud__c hud__c--bl"></i><i class="hud__c hud__c--br"></i>
+            <div class="card__visual blueprint" aria-hidden="true">
+              <svg class="blueprint__svg" viewBox="0 0 340 210">
+                <defs>
+                  <pattern id="bp-grid" width="17" height="17" patternUnits="userSpaceOnUse">
+                    <path d="M17 0H0V17" fill="none" stroke="rgba(69,227,255,0.12)" stroke-width="0.6"/>
+                  </pattern>
+                </defs>
+                <rect class="blueprint__grid" width="340" height="210" fill="url(#bp-grid)"/>
+                <g class="blueprint__fills">
+                  <rect x="70" y="30" width="200" height="150" rx="18"/>
+                  <rect x="90" y="92" width="72" height="68" rx="9"/>
+                  <rect x="178" y="92" width="72" height="28" rx="7"/>
+                  <rect x="178" y="132" width="72" height="28" rx="7"/>
+                </g>
+                <g class="blueprint__lines">
+                  <rect class="bp-line" x="70" y="30" width="200" height="150" rx="18"/>
+                  <line class="bp-line" x1="70" y1="72" x2="270" y2="72"/>
+                  <circle class="bp-line" cx="92" cy="51" r="7"/>
+                  <line class="bp-line" x1="110" y1="51" x2="170" y2="51"/>
+                  <rect class="bp-line" x="90" y="92" width="72" height="68" rx="9"/>
+                  <rect class="bp-line" x="178" y="92" width="72" height="28" rx="7"/>
+                  <rect class="bp-line" x="178" y="132" width="72" height="28" rx="7"/>
+                  <line class="bp-line bp-dim" x1="70" y1="196" x2="270" y2="196"/>
+                  <line class="bp-line bp-dim" x1="286" y1="30" x2="286" y2="180"/>
+                </g>
+                <g class="blueprint__labels">
+                  <text x="170" y="206" text-anchor="middle">W 200</text>
+                  <text x="300" y="108" transform="rotate(90 300 108)" text-anchor="middle">H 150</text>
+                  <text x="70" y="22">REF // GAP-001</text>
+                </g>
+              </svg>
+              <div class="blueprint__log">
+                <p class="log__line"><span class="log__prompt">›</span><span class="log__text">scanning for gaps</span><b class="log__state">found</b></p>
+                <p class="log__line"><span class="log__prompt">›</span><span class="log__text">designing the feel</span><b class="log__state">done</b></p>
+                <p class="log__line"><span class="log__prompt">›</span><span class="log__text">building it properly</span><b class="log__state">done</b></p>
+                <p class="log__line"><span class="log__prompt">›</span><span class="log__text">shipping to people</span><b class="log__state log__state--live">live</b></p>
               </div>
             </div>
             <div class="card__body">
-              <p class="card__label">AI-native</p>
-              <h3 class="card__title">Products that think with you</h3>
-              <p class="card__text">From a handful of ingredients to a dinner you'll actually cook. That's intelligence doing the hard part, quietly.</p>
+              <p class="card__label">Innovation</p>
+              <h3 class="card__title">From gap to product</h3>
+              <p class="card__text">Spot what's missing. Design how it should feel. Build it properly. Put it in people's hands.</p>
             </div>
           </article>
 
-          <!-- 2. Design-led -->
-          <article class="card" data-cursor="link">
+          <!-- 2. Craft -->
+          <article class="card hud" data-cursor="link">
+            <i class="hud__c hud__c--tl"></i><i class="hud__c hud__c--tr"></i><i class="hud__c hud__c--bl"></i><i class="hud__c hud__c--br"></i>
             <div class="card__visual layers" aria-hidden="true">
-              <div class="layers__stack">
-                <i></i><i></i><i></i>
-              </div>
+              <div class="layers__stack"><i></i><i></i><i></i></div>
             </div>
             <div class="card__body">
               <p class="card__label">Craft</p>
@@ -244,26 +285,28 @@
             </div>
           </article>
 
-          <!-- 3. Private -->
-          <article class="card" data-cursor="link">
-            <div class="card__visual shield" aria-hidden="true">
-              <div class="shield__rings"><i></i><i></i><i></i></div>
-              <svg class="shield__icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.4 3 8.5 7 9.6 4-1.1 7-5.2 7-9.6V6l-7-3Z"/><path d="m9.5 12 1.8 1.8L15 10"/></svg>
+          <!-- 3. People -->
+          <article class="card hud" data-cursor="link">
+            <i class="hud__c hud__c--tl"></i><i class="hud__c hud__c--tr"></i><i class="hud__c hud__c--bl"></i><i class="hud__c hud__c--br"></i>
+            <div class="card__visual pulse" aria-hidden="true">
+              <div class="pulse__rings"><i></i><i></i><i></i></div>
+              <svg class="pulse__icon" viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-8.6C.9 9 2.6 5 6.5 5c2 0 3.4 1 4.5 2.4C12.1 6 13.5 5 15.5 5c3.9 0 5.6 4 3.8 7.4C19 16.6 12 21 12 21Z"/></svg>
             </div>
             <div class="card__body">
-              <p class="card__label">Trust</p>
-              <h3 class="card__title">Private by design</h3>
-              <p class="card__text">Your data is yours. We treat privacy as a constraint we design within, not a feature we add later.</p>
+              <p class="card__label">People</p>
+              <h3 class="card__title">Built to help</h3>
+              <p class="card__text">If it doesn't make someone's day better, it doesn't ship. That's the whole test.</p>
             </div>
           </article>
 
-          <!-- 4. Shipped -->
-          <article class="card" data-cursor="link">
+          <!-- 4. Momentum -->
+          <article class="card hud" data-cursor="link">
+            <i class="hud__c hud__c--tl"></i><i class="hud__c hud__c--tr"></i><i class="hud__c hud__c--bl"></i><i class="hud__c hud__c--br"></i>
             <div class="card__visual ticks" aria-hidden="true">
               <div class="ticks__row">
                 <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
               </div>
-              <div class="ticks__labels"><span>v1.0</span><span>v1.4</span><span>v2.0</span></div>
+              <div class="ticks__labels"><span>idea</span><span>build</span><span>ship</span></div>
             </div>
             <div class="card__body">
               <p class="card__label">Momentum</p>
@@ -272,17 +315,18 @@
             </div>
           </article>
 
-          <!-- 5. Stack -->
-          <article class="card card--wide card--short" data-cursor="link">
+          <!-- 5. Tools -->
+          <article class="card card--wide card--short hud" data-cursor="link">
+            <i class="hud__c hud__c--tl"></i><i class="hud__c hud__c--tr"></i><i class="hud__c hud__c--bl"></i><i class="hud__c hud__c--br"></i>
             <div class="card__body card__body--row">
               <div>
-                <p class="card__label">Built on the frontier</p>
-                <h3 class="card__title">The best models, the right way</h3>
+                <p class="card__label">Future-built</p>
+                <h3 class="card__title">Modern tools, no legacy baggage</h3>
               </div>
               <div class="tags" aria-hidden="true">
                 <div class="tags__track">
-                  <span>Frontier models</span><span>On-device inference</span><span>Native iOS &amp; Android</span><span>Realtime pipelines</span><span>Evals-first</span><span>Edge delivery</span>
-                  <span>Frontier models</span><span>On-device inference</span><span>Native iOS &amp; Android</span><span>Realtime pipelines</span><span>Evals-first</span><span>Edge delivery</span>
+                  <span>Native apps</span><span>Modern web</span><span>Realtime</span><span>Automation</span><span>3D &amp; motion</span><span>Cloud</span><span>Design systems</span>
+                  <span>Native apps</span><span>Modern web</span><span>Realtime</span><span>Automation</span><span>3D &amp; motion</span><span>Cloud</span><span>Design systems</span>
                 </div>
               </div>
             </div>
@@ -291,12 +335,12 @@
       </div>
     </section>
 
-    <!-- ============ APPS / JUST COOKED ============ -->
-    <section class="apps section" id="apps">
+    <!-- ============ PRODUCTS / JUST COOKED ============ -->
+    <section class="apps section" id="products">
       <div class="apps__glow" aria-hidden="true"></div>
       <div class="container">
         <div class="section__head" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__num">03</span>Our apps</p>
+          <p class="eyebrow"><span class="eyebrow__num">03</span><span data-scramble>Products</span></p>
         </div>
 
         <div class="jc">
@@ -304,17 +348,12 @@
             <div class="jc__brand" data-reveal>
               <img src="assets/Icon.svg" alt="Just Cooked app icon" class="jc__icon" width="64" height="64">
               <div>
-                <p class="jc__kicker">App 01 — Live now</p>
+                <p class="jc__kicker"><span data-scramble>Product 01 — Live now</span></p>
                 <h2 class="jc__title">Just Cooked</h2>
               </div>
             </div>
-            <p class="jc__tagline" data-split><em>AI-powered cooking,</em> made easy.</p>
-            <p class="jc__text" data-reveal>Tell Just Cooked what you've got and how much time you have. It turns it into a recipe you'll genuinely want to make, step by step.</p>
-            <ul class="jc__features" data-reveal-group>
-              <li><svg viewBox="0 0 16 16"><path d="m3 8.5 3 3 7-7"/></svg>Pantry to plate in seconds</li>
-              <li><svg viewBox="0 0 16 16"><path d="m3 8.5 3 3 7-7"/></svg>Clear, step-by-step guidance</li>
-              <li><svg viewBox="0 0 16 16"><path d="m3 8.5 3 3 7-7"/></svg>Made for real kitchens, not test kitchens</li>
-            </ul>
+            <p class="jc__tagline" data-split>Home cooking, <em>made easy.</em></p>
+            <p class="jc__text" data-reveal>Our first product. Just Cooked makes cooking at home feel possible: log each meal you make, watch your week fill up, and build the habit one plate at a time. No pressure, every one counts.</p>
             <div class="jc__actions" data-reveal>
               <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--jc" data-magnetic data-cursor="link">
                 <span>Open justcooked.app</span>
@@ -324,105 +363,73 @@
             </div>
           </div>
 
-          <div class="jc__stage" data-cursor-text="Open" data-reveal>
+          <div class="jc__stage hud" id="phoneStage" data-reveal data-cursor-text="Drag">
             <span class="jc__watermark" aria-hidden="true">JC</span>
-            <a href="https://justcooked.app" target="_blank" rel="noopener" class="phone-link" aria-label="Open Just Cooked">
-              <div class="phone" id="phone">
-                <div class="phone__screen">
-                  <div class="phone__notch"></div>
-                  <div class="app">
-                    <div class="app__status"><span>9:41</span><span class="app__status-icons"><i></i><i></i><i></i></span></div>
-                    <div class="app__head">
-                      <img src="assets/Icon.svg" alt="" width="28" height="28">
-                      <span>Just Cooked</span>
-                    </div>
-                    <p class="app__greet">What's in your<br>kitchen tonight?</p>
-                    <div class="app__chips">
-                      <span>🥚 Eggs</span><span>🍅 Tomatoes</span><span>🧀 Feta</span><span>🌿 Spinach</span><span class="app__chip-add">+ Add</span>
-                    </div>
-                    <div class="app__cta">Cook something ✦</div>
-                    <div class="app__card">
-                      <div class="app__card-img"></div>
-                      <div class="app__card-body">
-                        <span class="app__card-tag">Tonight's pick</span>
-                        <strong>Baked shakshuka with feta</strong>
-                        <span class="app__card-meta">25 min · 2 servings · Easy</span>
-                      </div>
-                    </div>
-                    <div class="app__steps">
-                      <div class="app__step"><b>1</b><span>Soften onion, garlic and cumin</span></div>
-                      <div class="app__step"><b>2</b><span>Add tomatoes, simmer until rich</span></div>
-                      <div class="app__step app__step--dim"><b>3</b><span>Crack in eggs, crumble feta, bake</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </a>
+            <div class="jc__glow" aria-hidden="true"></div>
+            <canvas id="phoneScene" aria-label="3D model of a phone running Just Cooked"></canvas>
+            <i class="hud__c hud__c--tl"></i><i class="hud__c hud__c--tr"></i><i class="hud__c hud__c--bl"></i><i class="hud__c hud__c--br"></i>
+            <span class="hud__label hud__label--tl"><span data-scramble>Product 01 // Just Cooked</span></span>
+            <span class="hud__label hud__label--tr"><i class="live-dot"></i><span data-scramble>Live</span></span>
+            <span class="hud__label hud__label--bl"><span data-scramble>justcooked.app</span></span>
+            <span class="hud__label hud__label--br"><span data-scramble>Drag to rotate</span></span>
           </div>
-        </div>
-
-        <div class="apps__next" data-reveal>
-          <div class="apps__next-inner">
-            <p class="card__label">App 02</p>
-            <h3>Something new is in the kitchen.</h3>
-            <p>The next HYAICO product is in development. Follow Just Cooked to be first to hear.</p>
-          </div>
-          <div class="apps__next-glyph" aria-hidden="true">?</div>
         </div>
       </div>
     </section>
 
     <!-- ============ PROCESS (pinned horizontal on desktop) ============ -->
-    <section class="process section" id="process">
+    <section class="process section dotgrid" id="process">
       <div class="process__pin">
         <div class="container process__head">
-          <p class="eyebrow" data-reveal><span class="eyebrow__num">04</span>How we build</p>
+          <p class="eyebrow" data-reveal><span class="eyebrow__num">04</span><span data-scramble>How we build</span></p>
           <h2 class="section__title" data-split>Four steps. <em>Endlessly repeated.</em></h2>
         </div>
         <div class="process__track" id="processTrack">
           <article class="panel">
-            <span class="panel__num">01</span>
-            <h3 class="panel__title">Observe</h3>
-            <p class="panel__text">We start with a real, daily problem, never with a technology looking for one.</p>
+            <span class="panel__num">01 <b>//</b> SPOT</span>
+            <h3 class="panel__title">Spot</h3>
+            <p class="panel__text">Notice what should exist, but doesn't. Most of the best ideas are hiding in plain sight.</p>
             <div class="panel__art panel__art--observe" aria-hidden="true"><i></i><i></i><i></i></div>
           </article>
           <article class="panel">
-            <span class="panel__num">02</span>
-            <h3 class="panel__title">Model</h3>
-            <p class="panel__text">We prototype with the best models available and design around what they truly do well.</p>
+            <span class="panel__num">02 <b>//</b> DESIGN</span>
+            <h3 class="panel__title">Design</h3>
+            <p class="panel__text">Work out how it should feel before how it works. The experience is the product.</p>
             <div class="panel__art panel__art--model" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
           </article>
           <article class="panel">
-            <span class="panel__num">03</span>
-            <h3 class="panel__title">Ship</h3>
-            <p class="panel__text">We release early, listen hard and refine until it feels effortless.</p>
+            <span class="panel__num">03 <b>//</b> BUILD</span>
+            <h3 class="panel__title">Build</h3>
+            <p class="panel__text">Engineer it properly, with modern tools and no shortcuts that come back to bite.</p>
             <div class="panel__art panel__art--ship" aria-hidden="true"><i></i></div>
           </article>
           <article class="panel panel--accent">
-            <span class="panel__num">04</span>
-            <h3 class="panel__title">Repeat</h3>
-            <p class="panel__text">Great products are never finished. Neither are we.</p>
+            <span class="panel__num">04 <b>//</b> SHIP</span>
+            <h3 class="panel__title">Ship &amp; refine</h3>
+            <p class="panel__text">Release it, listen hard, improve. Then go again. Great products are never finished.</p>
             <div class="panel__art panel__art--repeat" aria-hidden="true"><i></i></div>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- ============ CONTACT / CTA ============ -->
-    <section class="cta section" id="contact">
+    <!-- ============ NEXT ============ -->
+    <section class="cta section" id="next">
       <div class="cta__glow" aria-hidden="true"></div>
+      <div class="cta__radar" aria-hidden="true"></div>
       <div class="container cta__inner">
-        <p class="eyebrow" data-reveal><span class="eyebrow__num">05</span>Contact</p>
-        <h2 class="cta__title" data-split>Let's build <em>what's next.</em></h2>
-        <p class="cta__text" data-reveal>Partnerships, press, or simply curious. We'd love to hear from you.</p>
+        <p class="eyebrow" data-reveal><span class="eyebrow__num">05</span><span data-scramble>What's next</span></p>
+        <h2 class="cta__title" data-split>Built for <em>what's next.</em></h2>
+        <p class="cta__text" data-reveal>HYAICO is only getting started. Our first product is live today, and the next things that should exist are already on the bench.</p>
         <div class="cta__actions" data-reveal-group>
-          <a href="mailto:hello@hyaico.com" class="btn btn--light btn--lg" data-magnetic data-cursor="link">
-            <span>hello@hyaico.com</span>
+          <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--jc btn--lg" data-magnetic data-cursor="link">
+            <img src="assets/Icon.svg" alt="" width="18" height="18" class="btn__icon">
+            <span>Open Just Cooked</span>
             <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg>
           </a>
-          <a href="https://justcooked.app" target="_blank" rel="noopener" class="btn btn--ghost btn--lg" data-magnetic data-cursor="link">
-            <img src="assets/Icon.svg" alt="" width="18" height="18" class="btn__icon">
-            <span>Try Just Cooked</span>
+          <a href="#top" class="btn btn--ghost btn--lg" data-magnetic data-cursor="link">
+            <span>Back to top</span>
+            <svg class="btn__arrow btn__arrow--up" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M4 7l4-4 4 4"/></svg>
           </a>
         </div>
       </div>
@@ -434,7 +441,7 @@
     <div class="container footer__inner">
       <div class="footer__brand">
         <img src="assets/HyaicoWhite.svg" alt="HYAICO" width="140" height="23">
-        <p>AI-native products for everyday life.</p>
+        <p>A company of innovation.</p>
       </div>
       <div class="footer__cols">
         <div class="footer__col">
@@ -442,34 +449,34 @@
           <a href="#vision">Vision</a>
           <a href="#work">What we do</a>
           <a href="#process">Process</a>
-          <a href="#contact">Contact</a>
+          <a href="#next">What's next</a>
         </div>
         <div class="footer__col">
           <p class="footer__heading">Products</p>
           <a href="https://justcooked.app" target="_blank" rel="noopener">Just Cooked ↗</a>
-          <span class="footer__soon">App 02 — soon</span>
         </div>
         <div class="footer__col">
-          <p class="footer__heading">Connect</p>
-          <a href="mailto:hello@hyaico.com">hello@hyaico.com</a>
+          <p class="footer__heading">Navigate</p>
           <a href="#top" class="footer__top" data-cursor="link">Back to top ↑</a>
         </div>
       </div>
     </div>
-    <div class="footer__wordmark" aria-hidden="true">
-      <img src="assets/HyaicoWhite.svg" alt="">
-    </div>
+    <div class="footer__wordmark" id="footerWordmark" aria-hidden="true"><i></i></div>
     <div class="container footer__bottom">
       <span>© <span id="year">2026</span> HYAICO. All rights reserved.</span>
-      <span>Intelligence, made everyday.</span>
+      <span>We create what should already exist.</span>
     </div>
   </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/SplitText.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/DrawSVGPlugin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrambleTextPlugin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/CustomEase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.1/dist/lenis.min.js"></script>
   <script type="module" src="js/scene.js"></script>
+  <script type="module" src="js/phone.js"></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>
