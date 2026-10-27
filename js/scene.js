@@ -2,15 +2,15 @@
    HYAICO — The stage (Three.js)
    Two layers on one fixed canvas:
      • the particle layer (with bloom): points morphing between forms as the
-       page scrolls — wordmark, planet horizon, double helix, spiral galaxy,
-       HYAICO, then distant dust — plus real geometry that rides along: a
-       glowing horizon line, light strands through the helix, a bright
-       galaxy core, and a chrome HYAICO that surfaces through the particles
+       page scrolls, with real geometry riding along — a globe with
+       latitude lines and atom orbits, a DNA helix with light strands and
+       base rungs, a galaxy with a bright core, distant dust, and finally the
+       particles that write HYAICO before a chrome HYAICO takes their place
      • the product layer, drawn on top without bloom or tone mapping on its
-       screen: the Just Cooked phone rising through a dark reflective floor
-       with a holographic grid, lit like a product shot
-   The loader hands over to the particle wordmark with a burst, which then
-   becomes the planet. Degrades gracefully.
+       screen: the Just Cooked phone rising through a dark mirror floor in a
+       studio backdrop with a holographic grid
+   Order: globe → helix → galaxy → the phone → chrome HYAICO → the ending,
+   where the chrome glides down and becomes the footer wordmark.
    ========================================================================== */
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -30,11 +30,10 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 const HY = (window.HY = window.HY || {});
 HY.progress = 0;   // 0..1 through the pinned story (main.js)
 HY.outro = 0;      // 0..1 as the ending arrives (main.js)
-HY.introDone = false;
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
 } catch (err) {
   html.classList.add('no-webgl');
   throw err;
@@ -50,7 +49,7 @@ camera.position.set(0, 0, 10);
 const VIS_H = 2 * Math.tan(THREE.MathUtils.degToRad(16)) * 10; // visible height at z = 0
 
 const fx = new THREE.Scene();      // particles + glowing geometry (bloomed)
-const front = new THREE.Scene();   // the phone and its floor (drawn on top, no bloom)
+const front = new THREE.Scene();   // the phone, its floor and backdrop (drawn on top, no bloom)
 const pmrem = new THREE.PMREMGenerator(renderer);
 const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 pmrem.dispose();
@@ -87,7 +86,7 @@ function planetPoints() {
   const a = new Float32Array(COUNT * 3);
   for (let i = 0; i < COUNT; i++) {
     const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
-    const r = PLANET_R + (Math.random() < 0.8 ? 0 : (Math.random() - 0.5) * 0.6);
+    const r = PLANET_R + (Math.random() < 0.85 ? 0 : (Math.random() - 0.5) * 0.5);
     a[i * 3] = r * Math.sin(ph) * Math.cos(th); a[i * 3 + 1] = r * Math.cos(ph); a[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
   }
   return a;
@@ -95,18 +94,11 @@ function planetPoints() {
 const HELIX = { turns: 3.2, R: 1.25, H: 6.2 };
 function helixPoints() {
   const a = new Float32Array(COUNT * 3);
-  const { turns, R, H } = HELIX, rungs = 30;
+  const { turns, R, H } = HELIX;
   for (let i = 0; i < COUNT; i++) {
-    const kind = i % 5;
-    let x, y, z;
-    if (kind < 4) {
-      const k = Math.random(), t = k * Math.PI * 2 * turns + (kind < 2 ? 0 : Math.PI);
-      x = Math.cos(t) * R; y = (k - 0.5) * H; z = Math.sin(t) * R;
-    } else {
-      const j = (Math.random() * rungs) | 0, k = (j + 0.5) / rungs, t = k * Math.PI * 2 * turns, s = Math.random() * 0.8 + 0.1;
-      x = Math.cos(t) * R * (1 - 2 * s); y = (k - 0.5) * H; z = Math.sin(t) * R * (1 - 2 * s);
-    }
-    a[i * 3] = x + (Math.random() - 0.5) * 0.05; a[i * 3 + 1] = y + (Math.random() - 0.5) * 0.05; a[i * 3 + 2] = z + (Math.random() - 0.5) * 0.05;
+    const k = Math.random(), t = k * Math.PI * 2 * turns + (i % 2 ? Math.PI : 0);
+    const jitter = 0.02 + Math.random() * 0.06;
+    a[i * 3] = Math.cos(t) * R + gauss() * jitter; a[i * 3 + 1] = (k - 0.5) * H + gauss() * jitter; a[i * 3 + 2] = Math.sin(t) * R + gauss() * jitter;
   }
   return a;
 }
@@ -161,27 +153,28 @@ const uniforms = {
   uTime: { value: 0 },
   uPixelRatio: { value: 1 },
   uSize: { value: 1.7 },
-  uFrom: { value: 0 },
+  uFrom: { value: 1 },
   uTo: { value: 1 },
   uMix: { value: 0 },
-  uBright: { value: [1.0, 0.5, 0.85, 0.9, 0.22] },
-  uTint: { value: [new THREE.Color(1, 1, 1), new THREE.Color(0.8, 0.9, 1), new THREE.Color(0.6, 0.92, 1), new THREE.Color(1, 0.86, 0.72), new THREE.Color(0.75, 0.82, 1)] },
+  uBright: { value: [1.0, 0.5, 0.75, 0.9, 0.22] },
+  uTint: { value: [new THREE.Color(1, 1, 1), new THREE.Color(0.8, 0.9, 1), new THREE.Color(0.65, 0.92, 1), new THREE.Color(1, 0.86, 0.72), new THREE.Color(0.75, 0.82, 1)] },
   uWordScale: { value: 1 },
   uGalaxyScale: { value: 1 },
+  uHelixOffset: { value: new THREE.Vector3(1.6, 0, 0) },
   uYaw: { value: 0 },
   uPointer: { value: new THREE.Vector2(0, 0) },
-  uBurst: { value: 0 },
   uGlobalAlpha: { value: 1 },
-  uPlanetY: { value: PLANET_Y },
+  uPlanetY: { value: PLANET_Y - 3 },
 };
 
 const material = new THREE.ShaderMaterial({
   uniforms, transparent: true, depthWrite: false, depthTest: true, blending: THREE.AdditiveBlending,
   vertexShader: /* glsl */ `
-    uniform float uTime, uPixelRatio, uSize, uMix, uWordScale, uGalaxyScale, uYaw, uBurst, uGlobalAlpha, uPlanetY;
+    uniform float uTime, uPixelRatio, uSize, uMix, uWordScale, uGalaxyScale, uYaw, uGlobalAlpha, uPlanetY;
     uniform int uFrom, uTo;
     uniform float uBright[5];
     uniform vec3 uTint[5];
+    uniform vec3 uHelixOffset;
     uniform vec2 uPointer;
     attribute vec3 aP0; attribute vec3 aP1; attribute vec3 aP2; attribute vec3 aP3; attribute vec3 aP4;
     attribute float aRand; attribute vec3 aColor;
@@ -192,7 +185,7 @@ const material = new THREE.ShaderMaterial({
     vec3 form(int i) {
       if (i == 0) return rotY(aP0 * uWordScale, uYaw);
       if (i == 1) return rotY(aP1, uTime * 0.04) + vec3(0.0, uPlanetY, 0.0);
-      if (i == 2) return rotY(aP2, uTime * 0.3);
+      if (i == 2) return rotY(aP2, uTime * 0.3) + uHelixOffset;
       if (i == 3) return rotY(aP3 * uGalaxyScale, uTime * 0.12);
       return aP4 + vec3(sin(uTime * 0.2 + aRand * 6.0) * 0.3, cos(uTime * 0.15 + aRand * 4.0) * 0.2, 0.0);
     }
@@ -209,14 +202,13 @@ const material = new THREE.ShaderMaterial({
       p += vec3(sin(p.y * 1.7 + uTime * 1.3 + aRand * 6.2831), cos(p.x * 1.3 + uTime * 0.9 + aRand * 3.1), sin(p.z * 1.9 + uTime * 1.1 + aRand * 2.0)) * sw * 0.6;
       p += vec3(sin(uTime * 0.6 + aRand * 9.0), cos(uTime * 0.45 + aRand * 7.0), sin(uTime * 0.5 + aRand * 5.0)) * 0.012;
       p.xy += uPointer * (0.06 + 0.3 * aRand * aRand) * (1.0 + 0.6 * sin(aRand * 40.0));
-      p += normalize(p + vec3(0.001, 0.002, 0.003)) * uBurst * (0.5 + aRand * 1.1);
       vec4 mv = modelViewMatrix * vec4(p, 1.0);
       gl_Position = projectionMatrix * mv;
       gl_PointSize = uSize * uPixelRatio * (0.55 + aRand * 0.9) * (10.0 / -mv.z);
       float bright = mix(uBright[uFrom] * glow(uFrom, a), uBright[uTo] * glow(uTo, b), t);
       vec3 tint = mix(uTint[uFrom], uTint[uTo], t);
       float twinkle = 0.7 + 0.3 * sin(uTime * 2.2 + aRand * 40.0);
-      vAlpha = uGlobalAlpha * bright * twinkle * (0.45 + 0.55 * aRand) * (1.0 + sw * 0.6 + uBurst * 0.6);
+      vAlpha = uGlobalAlpha * bright * twinkle * (0.45 + 0.55 * aRand) * (1.0 + sw * 0.6);
       vColor = aColor * tint;
     }`,
   fragmentShader: /* glsl */ `
@@ -245,23 +237,74 @@ function glowTexture(inner, mid) {
   ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 256);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-// the planet's horizon: a thin line of light along the limb
-const horizon = new THREE.Mesh(new THREE.TorusGeometry(PLANET_R + 0.03, 0.014, 8, 256), glowMat(0xbfe9ff));
-horizon.position.y = PLANET_Y;
-fx.add(horizon);
-// the helix: two light strands the particles trace
-const strands = new THREE.Group();
-[0, Math.PI].forEach((phase) => {
-  const pts = [];
-  for (let i = 0; i <= 420; i++) { const k = i / 420, t = k * Math.PI * 2 * HELIX.turns + phase; pts.push(new THREE.Vector3(Math.cos(t) * HELIX.R, (k - 0.5) * HELIX.H, Math.sin(t) * HELIX.R)); }
-  strands.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 420, 0.013, 6, false), glowMat(0x9be8ff)));
+
+/* the globe: latitude and longitude lines, three atom orbits with electrons */
+const globe = new THREE.Group();
+fx.add(globe);
+{
+  const segs = [];
+  const R = PLANET_R + 0.02;
+  for (let m = 0; m < 12; m++) { // meridians
+    const a = (m / 12) * Math.PI;
+    for (let i = 0; i < 96; i++) {
+      const t0 = (i / 96) * Math.PI * 2, t1 = ((i + 1) / 96) * Math.PI * 2;
+      segs.push(Math.cos(t0) * R * Math.cos(a), Math.sin(t0) * R, Math.cos(t0) * R * Math.sin(a), Math.cos(t1) * R * Math.cos(a), Math.sin(t1) * R, Math.cos(t1) * R * Math.sin(a));
+    }
+  }
+  for (let p = 1; p < 8; p++) { // parallels
+    const lat = -Math.PI / 2 + (p / 8) * Math.PI, r = Math.cos(lat) * R, y = Math.sin(lat) * R;
+    for (let i = 0; i < 96; i++) {
+      const t0 = (i / 96) * Math.PI * 2, t1 = ((i + 1) / 96) * Math.PI * 2;
+      segs.push(Math.cos(t0) * r, y, Math.sin(t0) * r, Math.cos(t1) * r, y, Math.sin(t1) * r);
+    }
+  }
+  const lg = new THREE.BufferGeometry();
+  lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(segs), 3));
+  globe.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x7fd4ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })));
+}
+const orbits = new THREE.Group();
+const electrons = [];
+[[0.62, 0.2], [0.85, 2.3], [0.72, 4.2]].forEach(([tilt, spin], i) => {
+  const ring = new THREE.Group();
+  ring.rotation.set(tilt, spin, 0);
+  ring.add(new THREE.Mesh(new THREE.TorusGeometry(3.95, 0.011, 8, 256), glowMat(i === 1 ? 0xc9b8ff : 0x9be8ff)));
+  const e = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), glowMat(0xffffff));
+  e.userData = { speed: 0.35 + i * 0.12, phase: i * 2.1 };
+  ring.add(e);
+  electrons.push(e);
+  orbits.add(ring);
 });
-fx.add(strands);
-// the galaxy's core
+fx.add(orbits);
+
+/* the helix: two thick light backbones and colour-paired base rungs */
+const dna = new THREE.Group();
+fx.add(dna);
+{
+  [0, Math.PI].forEach((phase) => {
+    const pts = [];
+    for (let i = 0; i <= 420; i++) { const k = i / 420, t = k * Math.PI * 2 * HELIX.turns + phase; pts.push(new THREE.Vector3(Math.cos(t) * HELIX.R, (k - 0.5) * HELIX.H, Math.sin(t) * HELIX.R)); }
+    dna.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 420, 0.034, 8, false), glowMat(0xaeeaff)));
+  });
+  const rungs = 34, up = new THREE.Vector3(0, 1, 0);
+  for (let j = 0; j < rungs; j++) {
+    const k = (j + 0.5) / rungs, t = k * Math.PI * 2 * HELIX.turns, y = (k - 0.5) * HELIX.H;
+    const A = new THREE.Vector3(Math.cos(t) * HELIX.R, y, Math.sin(t) * HELIX.R), B = A.clone().multiplyScalar(-1).setY(y), M = A.clone().add(B).multiplyScalar(0.5);
+    [[A, M, 0x45e3ff], [M, B, 0x9d7cff]].forEach(([p, q, color]) => {
+      const len = p.distanceTo(q);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, len * 0.92, 8), glowMat(color));
+      m.position.copy(p).add(q).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(up, q.clone().sub(p).normalize());
+      dna.add(m);
+    });
+  }
+}
+
+/* the galaxy's core */
 const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('rgba(255,255,255,1)', 'rgba(255,220,180,0.55)'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
 core.scale.setScalar(1.6);
 fx.add(core);
-// lights for the chrome wordmark (built once the logo loads)
+
+/* lights for the chrome wordmark (built once the logo loads) */
 fx.add(new THREE.DirectionalLight(0xffffff, 1.2).translateX(2).translateY(4).translateZ(6));
 const sweep = new THREE.PointLight(0xffffff, 60, 12, 1.8);
 sweep.position.set(-6, 1.5, 2.5);
@@ -320,7 +363,6 @@ function roundedRect(w, h, r) {
   s.lineTo(x, y + r); s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
   return s;
 }
-/* ShapeGeometry UVs are raw XY; map them to 0..1 across the screen */
 function mapUVs(g, w, h) {
   const uv = g.attributes.uv;
   for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / w + 0.5, uv.getY(i) / h + 0.5);
@@ -360,14 +402,14 @@ front.add(phone);
   const metal = new THREE.MeshPhysicalMaterial({ color: 0x5c5c64, metalness: 0.92, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.22 });
   const black = new THREE.MeshPhysicalMaterial({ color: 0x050505, metalness: 0.15, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.06 });
   const bodyGeo = new THREE.ExtrudeGeometry(roundedRect(PHONE.w - 2 * b, PHONE.h - 2 * b, PHONE.r - b), {
-    depth: PHONE.d - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelOffset: 0, bevelSegments: 4, curveSegments: 24,
+    depth: PHONE.d - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelOffset: 0, bevelSegments: 5, curveSegments: 32,
   });
   bodyGeo.translate(0, 0, -(PHONE.d - 2 * b) / 2);
   phone.add(new THREE.Mesh(bodyGeo, metal));
-  const glass = new THREE.Mesh(new THREE.ShapeGeometry(roundedRect(GLASS.w, GLASS.h, GLASS.r), 18), black);
+  const glass = new THREE.Mesh(new THREE.ShapeGeometry(roundedRect(GLASS.w, GLASS.h, GLASS.r), 24), black);
   glass.position.z = PHONE.d / 2 + 0.0008;
   phone.add(glass);
-  const screenGeo = new THREE.ShapeGeometry(roundedRect(SCREEN.w, SCREEN.h, SCREEN.r), 24); // rounded, so it never pokes past the glass
+  const screenGeo = new THREE.ShapeGeometry(roundedRect(SCREEN.w, SCREEN.h, SCREEN.r), 24);
   mapUVs(screenGeo, SCREEN.w, SCREEN.h);
   const screen = new THREE.Mesh(screenGeo, screenMat);
   screen.position.z = PHONE.d / 2 + 0.0018;
@@ -386,21 +428,38 @@ front.add(phone);
   });
 }
 
-/* The stage floor: a dark mirror the phone rises through, with a holographic grid */
+/* The stage: a studio backdrop, a dark mirror the phone rises through, a holographic grid */
+const stage = new THREE.Group();
+front.add(stage);
+const backdropMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false,
+  uniforms: { uIn: { value: 0 }, uHorizon: { value: -2 }, uTop: { value: new THREE.Color(0x06060a) }, uBottom: { value: new THREE.Color(0x0c0c16) }, uGlow: { value: new THREE.Color(0x27305c) } },
+  vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+  fragmentShader: `uniform float uIn, uHorizon; uniform vec3 uTop, uBottom, uGlow; varying vec3 vW;
+    void main(){
+      float band = exp(-pow((vW.y - uHorizon) / 2.2, 2.0));
+      float side = exp(-pow(vW.x / 14.0, 2.0));
+      vec3 col = mix(uBottom, uTop, smoothstep(-6.0, 9.0, vW.y)) + uGlow * band * side * 0.9;
+      gl_FragColor = vec4(col, uIn);
+    }`,
+});
+const backdrop = new THREE.Mesh(new THREE.PlaneGeometry(90, 50), backdropMat);
+backdrop.position.set(0, 4, -11);
+stage.add(backdrop);
 const floor = new THREE.Group();
-front.add(floor);
+stage.add(floor);
 const mirror = new Reflector(new THREE.PlaneGeometry(22, 14), { color: 0x2c2c33, textureWidth: coarse ? 512 : 1024, textureHeight: coarse ? 256 : 512, clipBias: 0.003, multisample: 0 });
 mirror.rotation.x = -Math.PI / 2;
 mirror.position.z = -3;
 floor.add(mirror);
 const floorMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
-  uniforms: { uIn: { value: 0 }, uOpacity: { value: 1 }, uReach: { value: 4.5 }, uColor: { value: new THREE.Color(0x06060a) } },
+  uniforms: { uIn: { value: 0 }, uOpacity: { value: 1 }, uReach: { value: 4.5 }, uColor: { value: new THREE.Color(0x08080e) } },
   vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
   fragmentShader: `uniform float uIn, uOpacity, uReach; uniform vec3 uColor; varying vec3 vW;
     void main(){
       float z = vW.z;                                   // the phone stands at z = 0; its reflection lies on the floor in front of it
-      float a = z < -0.2 ? 1.0 : pow(clamp(z / uReach, 0.0, 1.0), 0.7); // mirror shows in front of the phone, then fades to dark
+      float a = z < -0.2 ? 1.0 : pow(clamp(z / uReach, 0.0, 1.0), 0.7);
       a = mix(1.0, a, uIn);
       gl_FragColor = vec4(uColor, a * uOpacity);
     }`,
@@ -417,7 +476,7 @@ const gridMat = new THREE.ShaderMaterial({
     float line(vec2 p, float w){ vec2 g = abs(fract(p - 0.5) - 0.5) / fwidth(p); return 1.0 - smoothstep(0.0, w, min(g.x, g.y)); }
     void main(){
       vec2 p = vW.xz * 1.4;
-      float minor = line(p, 1.1) * 0.3, major = line(p * 0.25, 1.3) * 0.8;
+      float minor = line(p, 1.1) * 0.25, major = line(p * 0.25, 1.3) * 0.7;
       float d = length(vW.xz) / 9.0;
       float fade = smoothstep(1.0, 0.1, d);
       float breathe = 0.85 + 0.15 * sin(uTime * 0.7);
@@ -429,10 +488,6 @@ const grid = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), gridMat);
 grid.rotation.x = -Math.PI / 2;
 grid.position.set(0, 0.004, -4);
 floor.add(grid);
-// a soft column of light behind the phone (bloomed layer)
-const shaft = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 11), new THREE.MeshBasicMaterial({ map: glowTexture('rgba(255,255,255,0.9)', 'rgba(170,200,255,0.35)'), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
-shaft.scale.set(1, 1.6, 1);
-fx.add(shaft);
 
 /* Lights for the phone */
 front.add(new THREE.HemisphereLight(0xfff6ec, 0x1a1a22, 0.5));
@@ -451,9 +506,9 @@ if (!coarse) {
 
 /* ---------- Camera keyframes per form ---------- */
 const CAM = [
-  { p: new THREE.Vector3(0, 0, 10), l: new THREE.Vector3(0, 0, 0) },         // wordmark
-  { p: new THREE.Vector3(0, 0.3, 10), l: new THREE.Vector3(0, -0.2, 0) },    // planet
-  { p: new THREE.Vector3(2.4, 0.9, 9.0), l: new THREE.Vector3(-1.4, 0, 0) }, // helix (right of the text)
+  { p: new THREE.Vector3(0, 0, 10), l: new THREE.Vector3(0, 0, 0) },         // chrome wordmark
+  { p: new THREE.Vector3(0, 0.3, 10), l: new THREE.Vector3(0, -0.2, 0) },    // globe
+  { p: new THREE.Vector3(0.4, 0.5, 10), l: new THREE.Vector3(0, 0, 0) },     // helix (it sits right of the text itself)
   { p: new THREE.Vector3(0, 4.4, 7.6), l: new THREE.Vector3(0, -0.7, 0) },   // galaxy (seen from above)
   { p: new THREE.Vector3(0, 1.3, 10), l: new THREE.Vector3(0, -0.25, 0) },   // the stage (slightly from above, so the floor reads)
 ];
@@ -461,9 +516,9 @@ const CAM = [
 const BEATS = [
   { f: 1, a: 0.0, b: 0.06 },
   { f: 2, a: 0.16, b: 0.27 },
-  { f: 3, a: 0.37, b: 0.48 },
-  { f: 0, a: 0.58, b: 0.68 },
-  { f: 4, a: 0.78, b: 1.0 },
+  { f: 3, a: 0.37, b: 0.47 },
+  { f: 4, a: 0.56, b: 0.7 },
+  { f: 0, a: 0.8, b: 1.0 },
 ];
 
 /* ---------- Layout ---------- */
@@ -475,19 +530,18 @@ function layout() {
   stacked = camera.aspect < 1.05;
   const vw = visibleWidth();
   HY.storyWordScale = Math.min(1, (vw * (stacked ? 0.88 : 0.66)) / WORD_W);
-  if (!HY.introDone) {
-    const mark = document.getElementById('loaderMark');
-    const frac = mark ? mark.getBoundingClientRect().width / window.innerWidth : 0.46;
-    uniforms.uWordScale.value = Math.max(0.2, (frac * vw) / WORD_W);
-  } else uniforms.uWordScale.value = HY.storyWordScale;
+  uniforms.uWordScale.value = HY.storyWordScale;
   uniforms.uGalaxyScale.value = stacked ? 0.62 : Math.min(1, vw / 9.2);
+  uniforms.uHelixOffset.value.set(stacked ? 0 : 1.7, stacked ? -1.7 : 0, 0); // on phones the helix hangs below the title
+  dna.position.copy(uniforms.uHelixOffset.value);
   phoneScale = (VIS_H * (stacked ? 0.5 : 0.72)) / PHONE.h;
-  phoneAt.set(stacked ? 0 : vw * 0.17, stacked ? 0.72 : 0.05, 0);
-  floor.position.set(phoneAt.x, phoneAt.y - (PHONE.h / 2) * phoneScale - 0.04, 0);
-  floorMat.uniforms.uReach.value = stacked ? 2.0 : 4.5;
-  shaft.position.set(phoneAt.x, phoneAt.y + 1.2, -1.4);
+  phoneAt.set(stacked ? 0 : vw * 0.18, stacked ? 0.72 : 0.05, 0);
+  const floorY = phoneAt.y - (PHONE.h / 2) * phoneScale - 0.04;
+  floor.position.set(phoneAt.x, floorY, 0);
+  backdropMat.uniforms.uHorizon.value = floorY + 1.2;
+  floorMat.uniforms.uReach.value = stacked ? 1.3 : 4.5;
   uniforms.uSize.value = (coarse ? 2.0 : 1.7) * (stacked ? 0.9 : 1);
-  CAM[2].l.x = stacked ? 0 : -1.4;
+  CAM[2].p.x = stacked ? 0 : 0.4;
   CAM[2].l.y = stacked ? 0.9 : 0;
   CAM[3].l.y = stacked ? -1.4 : -0.7;
   CAM[4].l.y = stacked ? 0.35 : -0.25;
@@ -506,20 +560,17 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-/* ---------- Intro hand-over: burst, then wordmark → planet ---------- */
-const intro = { mix: 0 };
+/* ---------- Intro: the globe rises into place as the loader lifts ---------- */
 function startIntro() {
   const g = window.gsap;
-  if (reduced || !g) { intro.mix = 1; HY.introDone = true; layout(); return; }
-  g.timeline()
-    .to(uniforms.uBurst, { value: 1, duration: 0.45, ease: 'power2.out' }, 0)
-    .to(uniforms.uBurst, { value: 0, duration: 1.7, ease: 'power3.inOut' }, 0.45)
-    .to(intro, { mix: 1, duration: 2.3, ease: 'power3.inOut', onComplete() { HY.introDone = true; layout(); } }, 0.35);
+  if (reduced || !g) { uniforms.uPlanetY.value = PLANET_Y; return; }
+  g.to(uniforms.uPlanetY, { value: PLANET_Y, duration: 2.6, ease: 'power3.out' });
 }
 window.addEventListener('scene:intro', startIntro, { once: true });
 
 /* ---------- Story state ---------- */
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+const footer = document.getElementById('footerWordmark');
 let smooth = 0, phoneIn = 0;
 function storyState(p) {
   for (let k = 0; k < BEATS.length; k++) {
@@ -530,52 +581,70 @@ function storyState(p) {
     }
     if (p <= cur.b) return { from: cur.f, to: cur.f, mix: 0 };
   }
-  return { from: 4, to: 4, mix: 0 };
+  return { from: 0, to: 0, mix: 0 };
 }
 const weightOf = (st, f) => (st.from === f ? 1 - st.mix : 0) + (st.to === f ? st.mix : 0);
+const ss = THREE.MathUtils.smoothstep;
 
 function applyState(dt) {
   smooth += (HY.progress - smooth) * (1 - Math.pow(0.002, dt));
-  const st = HY.introDone ? storyState(smooth) : { from: 0, to: 1, mix: intro.mix };
+  const st = storyState(smooth);
   uniforms.uFrom.value = st.from; uniforms.uTo.value = st.to; uniforms.uMix.value = st.mix;
-  const e = THREE.MathUtils.smoothstep(st.mix, 0, 1);
+  const e = ss(st.mix, 0, 1);
   camPos.lerpVectors(CAM[st.from].p, CAM[st.to].p, e);
   camLook.lerpVectors(CAM[st.from].l, CAM[st.to].l, e);
 
   /* geometry riding with the forms */
-  horizon.material.opacity = weightOf(st, 1) * 0.55;
+  const wGlobe = weightOf(st, 1);
+  globe.visible = wGlobe > 0.01; orbits.visible = globe.visible;
+  globe.children[0].material.opacity = wGlobe * 0.22;
+  orbits.children.forEach((ring) => { ring.children[0].material.opacity = wGlobe * 0.45; ring.children[1].material.opacity = wGlobe; });
   const wHelix = weightOf(st, 2);
-  strands.visible = wHelix > 0.01;
-  strands.children.forEach((m) => { m.material.opacity = wHelix * 0.28; });
+  dna.visible = wHelix > 0.01;
+  dna.children.forEach((m, i) => { m.material.opacity = wHelix * (i < 2 ? 0.55 : 0.7); });
   core.material.opacity = weightOf(st, 3) * 0.9;
-  /* the chrome HYAICO surfaces through the particle letters, then dissolves with them */
-  const chromeIn = HY.introDone ? THREE.MathUtils.smoothstep(smooth, 0.6, 0.645) * (1 - THREE.MathUtils.smoothstep(smooth, 0.685, 0.73)) : 0;
-  if (chrome) {
-    chrome.visible = chromeIn > 0.002;
-    chrome.children.forEach((m) => { m.material.opacity = chromeIn; });
-    chrome.scale.setScalar(uniforms.uWordScale.value);
-    chrome.rotation.y = uniforms.uYaw.value;
-  }
-  uniforms.uBright.value[0] = 1 - 0.6 * chromeIn;
 
-  /* the phone rises through the floor, then sinks back as the ending arrives */
-  const target = THREE.MathUtils.smoothstep(smooth, 0.76, 0.86) * (1 - THREE.MathUtils.smoothstep(HY.outro, 0, 0.55));
+  /* the chrome HYAICO takes over from the particle letters; nothing sparkles on it */
+  const chromeIn = ss(smooth, 0.84, 0.9);
+  const chromeFade = 1 - ss(HY.outro, 0.72, 0.96);
+  uniforms.uBright.value[0] = 1 - chromeIn;
+  if (chrome) {
+    chrome.visible = chromeIn * chromeFade > 0.002;
+    chrome.children.forEach((m) => { m.material.opacity = chromeIn * chromeFade; });
+    if (HY.outro > 0 && footer) {
+      /* the ending: the chrome glides down and becomes the footer wordmark */
+      const r = footer.getBoundingClientRect();
+      const wpp = VIS_H / window.innerHeight;
+      const k = ss(HY.outro, 0, 0.8);
+      const tx = (r.left + r.width / 2 - window.innerWidth / 2) * wpp, ty = -(r.top + r.height / 2 - window.innerHeight / 2) * wpp;
+      chrome.position.set(tx * k, ty * k, 0);
+      chrome.scale.setScalar(THREE.MathUtils.lerp(uniforms.uWordScale.value, (r.width * wpp) / WORD_W, k));
+      chrome.rotation.y = uniforms.uYaw.value * (1 - k);
+    } else {
+      chrome.position.set(0, 0, 0);
+      chrome.scale.setScalar(uniforms.uWordScale.value);
+      chrome.rotation.y = uniforms.uYaw.value;
+    }
+  }
+
+  /* the stage: backdrop and floor fade in, the phone rises through the floor, then sinks back */
+  const stageIn = ss(smooth, 0.5, 0.57) * (1 - ss(smooth, 0.7, 0.77));
+  const target = ss(smooth, 0.54, 0.62) * (1 - ss(smooth, 0.68, 0.74));
   phoneIn += (target - phoneIn) * (1 - Math.pow(0.001, dt));
-  const stageIn = THREE.MathUtils.smoothstep(smooth, 0.72, 0.8) * (1 - THREE.MathUtils.smoothstep(HY.outro, 0.3, 0.9));
-  floor.visible = stageIn > 0.002;
+  stage.visible = stageIn > 0.002;
   mirror.visible = phoneIn > 0.002;
   phone.visible = phoneIn > 0.002;
+  backdropMat.uniforms.uIn.value = stageIn;
   floorMat.uniforms.uIn.value = phoneIn;
   floorMat.uniforms.uOpacity.value = stageIn;
-  gridMat.uniforms.uIn.value = stageIn * 0.9;
-  shaft.material.opacity = phoneIn * 0.14;
-  const rise = 1 - THREE.MathUtils.smoothstep(phoneIn, 0, 1);
+  gridMat.uniforms.uIn.value = stageIn * 0.8;
+  const rise = 1 - ss(phoneIn, 0, 1);
   phone.scale.setScalar(phoneScale);
   phone.position.set(phoneAt.x, phoneAt.y - rise * PHONE.h * phoneScale * 1.15, 0);
-  uniforms.uGlobalAlpha.value = 1 - 0.6 * THREE.MathUtils.smoothstep(HY.outro, 0, 1);
+  uniforms.uGlobalAlpha.value = 1 - 0.6 * ss(HY.outro, 0, 1);
 
-  /* the app's screens change as the story ends */
-  if (HY.introDone) setScreen(smooth < 0.9 ? 'home' : smooth < 0.955 ? 'next-meal' : 'recipe');
+  /* the app's screens change while the phone is up */
+  setScreen(smooth < 0.635 ? 'home' : smooth < 0.675 ? 'next-meal' : 'recipe');
   return phoneIn;
 }
 
@@ -607,11 +676,17 @@ function frame() {
   gridMat.uniforms.uTime.value = elapsed;
   uniforms.uYaw.value = pointer.x * 0.22;
   uniforms.uPointer.value.set(pointer.x, pointer.y);
-  strands.rotation.y = elapsed * 0.3;
+  globe.position.y = uniforms.uPlanetY.value;
+  globe.rotation.y = elapsed * 0.04;
+  orbits.position.y = uniforms.uPlanetY.value;
+  orbits.children.forEach((ring, i) => { ring.rotation.y = [0.2, 2.3, 4.2][i] + elapsed * 0.05 * (i + 1); });
+  electrons.forEach((e) => { const a = elapsed * e.userData.speed + e.userData.phase; e.position.set(Math.cos(a) * 3.95, Math.sin(a) * 3.95, 0); });
+  dna.rotation.y = elapsed * 0.3;
   sweep.position.x = Math.sin(elapsed * 0.6) * 5;
   const pin = applyState(dt);
 
-  camera.position.set(camPos.x + pointer.x * 0.12, camPos.y + pointer.y * 0.08, camPos.z);
+  const parallax = 1 - ss(HY.outro, 0, 0.6);
+  camera.position.set(camPos.x + pointer.x * 0.12 * parallax, camPos.y + pointer.y * 0.08 * parallax, camPos.z);
   camera.lookAt(camLook);
 
   if (phone.visible) {
@@ -628,7 +703,7 @@ function frame() {
 
   renderer.clear();
   if (composer) composer.render(); else renderer.render(fx, camera);
-  if (floor.visible || phone.visible) { renderer.clearDepth(); renderer.render(front, camera); }
+  if (stage.visible || phone.visible) { renderer.clearDepth(); renderer.render(front, camera); }
 
   if (!ready) {
     ready = true;

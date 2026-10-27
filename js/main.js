@@ -1,6 +1,6 @@
 /* ==========================================================================
    HYAICO — Interactions
-   Loader → particle hand-over, smooth scroll, the pinned scroll story
+   Loader → clean hand-over, smooth scroll, the pinned scroll story
    (text beats), the ending, cursor, nav.
    ========================================================================== */
 (() => {
@@ -115,25 +115,23 @@
 
     const loaded = new Promise((r) => (document.readyState === 'complete' ? r() : window.addEventListener('load', r, { once: true })));
     const fonts = (document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve()).then(prepareHero);
-    const wordmark = new Promise((r) => (html.classList.contains('no-webgl') ? r() : window.addEventListener('scene:wordmark', r, { once: true })));
     const timeout = new Promise((r) => setTimeout(r, 5000));
-    Promise.all([boot.then(), Promise.race([Promise.all([loaded, fonts, wordmark]), timeout])]).then(handOver);
+    Promise.all([boot.then(), Promise.race([Promise.all([loaded, fonts]), timeout])]).then(handOver);
   }
 
+  /* The hand-over: the logo lifts away, the veil clears, the globe is already rising behind it */
   function handOver() {
     body.classList.remove('is-loading');
     prepareHero();
     const mark = document.getElementById('loaderMark');
     const tl = gsap.timeline();
     tl.to('.loader__meta', { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0)
-      .to('.loader__veil', { opacity: 0, duration: 1.0, ease: 'power2.inOut' }, 0.05)   // the particle wordmark glows through
-      .to('.loader__glow', { opacity: 1, duration: 0.5, ease: 'power2.in' }, 0.5)
-      .to('.loader__flash', { opacity: 1, duration: 0.14, ease: 'power1.in' }, 0.95)
-      .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 1.0)
-      .to([mark, '.loader__glow'], { opacity: 0, scale: 1.05, duration: 0.5, ease: 'power2.out' }, 1.0)
-      .to('.loader__flash', { opacity: 0, duration: 1.0, ease: 'power2.out' }, 1.09)
-      .add(heroIntro(), 2.0)
-      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.8);
+      .to('.loader__glow', { opacity: 0.9, duration: 0.5, ease: 'power2.in' }, 0.1)
+      .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 0.5)
+      .to([mark, '.loader__glow'], { scale: 1.12, opacity: 0, duration: 0.9, ease: 'power3.in' }, 0.5)
+      .to('.loader__veil', { opacity: 0, duration: 1.1, ease: 'power2.inOut' }, 0.7)
+      .add(heroIntro(), 1.3)
+      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.3);
   }
 
   function heroIntro() {
@@ -168,7 +166,7 @@
         onUpdate: (self) => {
           HY.progress = self.progress;
           if (scrollCue) scrollCue.style.opacity = self.progress > 0.02 ? '0' : '';
-          if (self.progress > 0.76 && !jc.dataset.scrambled) { jc.dataset.scrambled = '1'; scramble(jc.querySelector('[data-scramble]'), 0.9); }
+          if (self.progress > 0.54 && !jc.dataset.scrambled) { jc.dataset.scrambled = '1'; scramble(jc.querySelector('[data-scramble]'), 0.9); }
         },
       },
     });
@@ -177,20 +175,19 @@
       .fromTo(helix, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, 0.13)
       .to(helix, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.27)
       .fromTo(galaxy, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, 0.34)
-      .to(galaxy, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.48)
-      .fromTo(jc, hidden, { ...shown, duration: 0.06, ease: 'power2.out' }, 0.77)
-      .to({}, { duration: 0.17 });
+      .to(galaxy, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.47)
+      .fromTo(jc, hidden, { ...shown, duration: 0.06, ease: 'power2.out' }, 0.555)
+      .to(jc, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.7)
+      .to({}, { duration: 0.25 });
 
     /* Progress bar */
     const progress = document.querySelector('.progress span');
     ScrollTrigger.create({ start: 0, end: () => ScrollTrigger.maxScroll(window), onUpdate: (s) => { progress.style.transform = `scaleX(${s.progress})`; } });
 
-    /* Ending: the phone sinks back into the floor and the stage dims */
-    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 25%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
+    /* Ending: the chrome HYAICO glides down into the footer wordmark, which brightens as it lands */
+    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 20%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
     const wm = document.getElementById('footerWordmark');
-    if (wm) gsap.fromTo(wm, { yPercent: 28, opacity: 0.35 }, { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top bottom', end: 'bottom bottom', scrub: true } });
-    const jcOut = gsap.to(jc, { opacity: 0, y: -40, filter: 'blur(10px)', ease: 'none', paused: true });
-    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 60%', scrub: true, animation: jcOut });
+    if (wm) gsap.fromTo(wm, { opacity: 0 }, { opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top 45%', end: 'top 18%', scrub: true } });
     document.querySelectorAll('[data-reveal]').forEach((el, i) => {
       gsap.fromTo(el, { opacity: 0, y: 40 }, {
         opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.08,
@@ -218,7 +215,6 @@
       el.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
     });
 
-    /* The cursor: the dot is pinned to the pointer; the ring follows tightly on its own frame loop */
     const cursor = document.querySelector('.cursor');
     if (cursor) {
       body.classList.add('has-cursor');
