@@ -1,7 +1,7 @@
 /* ==========================================================================
    HYAICO — Interactions
    Loader → particle hand-over, smooth scroll, the pinned scroll story
-   (text beats), outro, cursor, nav.
+   (text beats), the ending, cursor, nav.
    ========================================================================== */
 (() => {
   'use strict';
@@ -69,11 +69,22 @@
   if (year) year.textContent = String(new Date().getFullYear());
 
   /* ------------------------------------------------------------------
+     Hero headline: split once fonts are in, before anything heavy runs
+  ------------------------------------------------------------------ */
+  const heroText = document.getElementById('heroText');
+  const scrollCue = document.getElementById('scrollCue');
+  let heroLines = null;
+  function prepareHero() {
+    if (heroLines || !hasSplit || reduced) return;
+    const title = heroText.querySelector('.title');
+    heroLines = new SplitText(title, { type: 'lines', mask: 'lines', linesClass: 'line' }).lines;
+    gsap.set(heroLines, { yPercent: 115 });
+  }
+
+  /* ------------------------------------------------------------------
      Loader
   ------------------------------------------------------------------ */
   const loader = document.getElementById('loader');
-  const heroText = document.getElementById('heroText');
-  const scrollCue = document.getElementById('scrollCue');
 
   if (!hasGsap || reduced || !loader) {
     if (loader) loader.remove();
@@ -84,18 +95,18 @@
     initStory();
   } else {
     body.classList.add('hero-intro');
-    const mark = document.getElementById('loaderMark');
+    const logo = loader.querySelector('.loader__logo');
     const line = loader.querySelector('.loader__line span');
     const head = loader.querySelector('.loader__line i');
     const count = loader.querySelector('[data-loader-count]');
     const state = { n: 0 };
 
-    const logo = loader.querySelector('.loader__logo');
-    gsap.set(logo, { '--reveal': '-18%' });
+    gsap.set(logo, { '--reveal': '-4%' });
     const boot = gsap.timeline();
-    boot.to(logo, { '--reveal': '118%', duration: 1.7, ease: 'power3.inOut' }, 0.15)
-      .to('.loader__streak', { opacity: 0, duration: 0.35 }, 1.75)
-      .fromTo('.loader__glow', { opacity: 0 }, { opacity: 0.75, duration: 0.9, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.6)
+    boot.to('.loader__beam', { opacity: 1, duration: 0.25 }, 0.1)
+      .to(logo, { '--reveal': '104%', duration: 1.6, ease: 'power2.inOut' }, 0.2)
+      .to('.loader__beam', { opacity: 0, duration: 0.3 }, 1.7)
+      .fromTo('.loader__glow', { opacity: 0 }, { opacity: 0.8, duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.7)
       .to('.loader__meta', { opacity: 1, duration: 0.5 }, 0.35)
       .to(state, {
         n: 100, duration: 2.5, ease: 'power2.inOut',
@@ -103,7 +114,7 @@
       }, 0.25);
 
     const loaded = new Promise((r) => (document.readyState === 'complete' ? r() : window.addEventListener('load', r, { once: true })));
-    const fonts = document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve();
+    const fonts = (document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve()).then(prepareHero);
     const wordmark = new Promise((r) => (html.classList.contains('no-webgl') ? r() : window.addEventListener('scene:wordmark', r, { once: true })));
     const timeout = new Promise((r) => setTimeout(r, 5000));
     Promise.all([boot.then(), Promise.race([Promise.all([loaded, fonts, wordmark]), timeout])]).then(handOver);
@@ -111,26 +122,24 @@
 
   function handOver() {
     body.classList.remove('is-loading');
+    prepareHero();
     const mark = document.getElementById('loaderMark');
     const tl = gsap.timeline();
     tl.to('.loader__meta', { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0)
-      .to('.loader__veil', { opacity: 0, duration: 1.0, ease: 'power2.inOut' }, 0.05)           // the particle wordmark glows through
+      .to('.loader__veil', { opacity: 0, duration: 1.0, ease: 'power2.inOut' }, 0.05)   // the particle wordmark glows through
       .to('.loader__glow', { opacity: 1, duration: 0.5, ease: 'power2.in' }, 0.5)
-      .to('.loader__flash', { opacity: 1, duration: 0.12, ease: 'power1.in' }, 0.95)
+      .to('.loader__flash', { opacity: 1, duration: 0.14, ease: 'power1.in' }, 0.95)
       .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 1.0)
-      .to([mark, '.loader__glow'], { opacity: 0, scale: 1.06, duration: 0.5, ease: 'power2.out' }, 1.0)
-      .to('.loader__flash', { opacity: 0, duration: 0.9, ease: 'power2.out' }, 1.07)
-      .add(heroIntro(), 1.9)
-      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.6);
+      .to([mark, '.loader__glow'], { opacity: 0, scale: 1.05, duration: 0.5, ease: 'power2.out' }, 1.0)
+      .to('.loader__flash', { opacity: 0, duration: 1.0, ease: 'power2.out' }, 1.09)
+      .add(heroIntro(), 2.0)
+      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.8);
   }
 
   function heroIntro() {
-    const title = heroText.querySelector('.title');
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-    if (hasSplit) {
-      const split = new SplitText(title, { type: 'lines', mask: 'lines', linesClass: 'line' });
-      tl.from(split.lines, { yPercent: 115, duration: 1.4, stagger: 0.14 }, 0.1);
-    } else tl.from(title, { opacity: 0, y: 40, duration: 1.2 }, 0.1);
+    if (heroLines) tl.to(heroLines, { yPercent: 0, duration: 1.4, stagger: 0.14 }, 0.1);
+    else tl.from(heroText.querySelector('.title'), { opacity: 0, y: 40, duration: 1.2 }, 0.1);
     tl.to(heroText.querySelector('.eyebrow'), { opacity: 1, duration: 0.6 }, 0)
       .add(scramble(heroText.querySelector('[data-scramble]'), 1.0) || gsap.to({}, { duration: 0 }), 0)
       .to(scrollCue, { opacity: 1, duration: 1 }, 1.0)
@@ -176,14 +185,14 @@
     const progress = document.querySelector('.progress span');
     ScrollTrigger.create({ start: 0, end: () => ScrollTrigger.maxScroll(window), onUpdate: (s) => { progress.style.transform = `scaleX(${s.progress})`; } });
 
-    /* Outro: the stage dims and the phone slips away as the ending arrives */
-    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 35%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
-    const wm = document.getElementById('footerWordmark');
-    if (wm) gsap.fromTo(wm, { yPercent: 30, opacity: 0.3 }, { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top bottom', end: 'bottom bottom', scrub: true } });
+    /* Ending: the phone slips away and the particles gather into the giant wordmark */
+    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 15%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
+    const jcOut = gsap.to(jc, { opacity: 0, y: -40, filter: 'blur(10px)', ease: 'none', paused: true });
+    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 60%', scrub: true, animation: jcOut });
     document.querySelectorAll('[data-reveal]').forEach((el, i) => {
       gsap.fromTo(el, { opacity: 0, y: 40 }, {
         opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.08,
-        scrollTrigger: { trigger: '#outro', start: 'top 60%', once: true },
+        scrollTrigger: { trigger: '#outro', start: 'top 55%', once: true },
         onStart: () => { el.classList.add('is-revealed'); el.querySelectorAll('[data-scramble]').forEach((s) => scramble(s, 0.9)); },
       });
     });
@@ -207,23 +216,28 @@
       el.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
     });
 
+    /* The cursor: the dot is pinned to the pointer; the ring follows tightly on its own frame loop */
     const cursor = document.querySelector('.cursor');
     if (cursor) {
       body.classList.add('has-cursor');
       const dot = cursor.querySelector('.cursor__dot');
       const ring = cursor.querySelector('.cursor__ring');
-      const dx = gsap.quickTo(dot, 'x', { duration: 0.12, ease: 'power3.out' });
-      const dy = gsap.quickTo(dot, 'y', { duration: 0.12, ease: 'power3.out' });
-      const rx = gsap.quickTo(ring, 'x', { duration: 0.45, ease: 'power3.out' });
-      const ry = gsap.quickTo(ring, 'y', { duration: 0.45, ease: 'power3.out' });
+      let px = -100, py = -100, rx = -100, ry = -100, seen = false;
       cursor.classList.add('is-hidden');
       window.addEventListener('pointermove', (e) => {
-        cursor.classList.remove('is-hidden');
-        dx(e.clientX); dy(e.clientY); rx(e.clientX); ry(e.clientY);
+        if (e.pointerType && e.pointerType !== 'mouse') return;
+        px = e.clientX; py = e.clientY;
+        if (!seen) { seen = true; rx = px; ry = py; cursor.classList.remove('is-hidden'); }
+        dot.style.transform = `translate3d(${px}px, ${py}px, 0)`;
         cursor.classList.toggle('is-link', !!e.target.closest('a, button, [data-cursor]'));
       }, { passive: true });
+      (function follow() {
+        rx += (px - rx) * 0.42; ry += (py - ry) * 0.42;
+        ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+        requestAnimationFrame(follow);
+      })();
       document.addEventListener('pointerleave', () => cursor.classList.add('is-hidden'));
-      document.addEventListener('pointerenter', () => cursor.classList.remove('is-hidden'));
+      document.addEventListener('pointerenter', () => { if (seen) cursor.classList.remove('is-hidden'); });
     }
   }
 })();
