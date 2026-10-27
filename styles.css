@@ -167,33 +167,33 @@ body.hero-intro .story__text--hero .eyebrow, body.hero-intro .scroll-cue { opaci
 .story__text--galaxy .title em { background: linear-gradient(92deg, #fff 0%, #ffd9b8 45%, #ffb07a 100%); -webkit-background-clip: text; background-clip: text; }
 
 /* Just Cooked beat: the copy sits in from the edge, close to the phone, and builds up piece by piece */
-.story__text--jc { justify-items: start; text-align: left; align-content: center; padding-left: clamp(96px, 19vw, 300px); padding-right: 48%; }
+.story__text--jc { justify-items: start; text-align: left; align-content: center; padding-left: clamp(100px, 19vw, 300px); padding-right: 42%; }
 .jc { display: grid; justify-items: start; }
 .jc > * { will-change: opacity, transform, filter; }
 .jc__eyebrow { color: #ffb48c; margin-bottom: clamp(18px, 3vh, 30px); }
 .jc__eyebrow .live-dot { background: var(--jc-warm); color: rgba(255, 138, 92, 0.6); }
-.jc__logo { margin: 0; width: min(36vw, 470px); }
+.jc__logo { margin: 0; width: min(38vw, 520px); }
 .jc__logo img { width: 100%; height: auto; filter: drop-shadow(0 14px 44px rgba(233, 75, 31, 0.32)); }
-.jc__lead { margin-top: clamp(14px, 2.6vh, 26px); font-size: clamp(1.7rem, 3.2vw, 3.1rem); line-height: 1.05; letter-spacing: -0.035em; font-weight: 500; color: var(--fg); text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.5); }
+.jc__lead { margin-top: clamp(16px, 3vh, 30px); font-size: clamp(2rem, 3.7vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 500; color: var(--fg); max-width: 10ch; text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6); }
 .jc__lead em {
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; padding-right: 0.06em;
   background: linear-gradient(92deg, #fff3ea 0%, #ffc8a8 45%, var(--jc-warm) 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 /* which of the app's screens the phone is showing */
 .jc__screens { display: flex; gap: 6px; margin-top: clamp(18px, 3vh, 28px); }
-.jc__screens i { position: relative; width: 36px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+.jc__screens i { position: relative; width: 44px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
 .jc__screens i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--jc-warm), #ffc8a8); transform: scaleX(0); transform-origin: left; transition: transform 0.7s var(--ease-out), opacity 0.4s; }
 .jc__screens i.is-on::after { transform: scaleX(1); }
 .stores { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: clamp(22px, 4vh, 36px); }
 .store {
-  display: inline-flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 20px 10px 16px; border-radius: 16px; pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 14px; min-height: 62px; padding: 12px 24px 12px 18px; border-radius: 18px; pointer-events: auto;
   background: var(--jc-cream); color: #1a1815; border: 1px solid var(--jc-cream); box-shadow: 0 18px 50px -18px rgba(255, 180, 140, 0.5); will-change: transform;
   transition: background-color 0.4s var(--ease-out), border-color 0.4s, box-shadow 0.4s;
 }
-.store svg { width: 24px; height: 24px; }
+.store svg { width: 26px; height: 26px; }
 .store span { display: grid; line-height: 1.05; text-align: left; }
-.store small { font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
-.store strong { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.store small { font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+.store strong { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
 .store:hover { background: #fff; border-color: #fff; box-shadow: 0 18px 50px -14px rgba(255, 180, 140, 0.7); }
 .store--ghost { background: rgba(255, 255, 255, 0.05); color: var(--fg); border-color: rgba(255, 255, 255, 0.16); box-shadow: none; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .store--ghost:hover { background: rgba(233, 75, 31, 0.14); border-color: rgba(255, 150, 110, 0.5); box-shadow: 0 0 40px -10px rgba(233, 75, 31, 0.5); }
@@ -221,10 +221,10 @@ html.no-webgl .story__text--jc::after { content: ""; position: absolute; right: 
 }
 .outro__inner {
   position: relative; width: 100%; max-width: var(--container); margin-inline: auto; min-height: 100vh; min-height: 100svh;
-  padding: 0 var(--gutter) 28px; display: grid; grid-template-rows: 1fr auto; justify-items: center;
+  padding: 0 var(--gutter) 28px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
 }
-.outro__center { display: grid; justify-items: center; align-content: center; text-align: center; padding: 14vh 0 6vh; }
-.outro__eyebrow { margin-bottom: clamp(22px, 3.6vh, 36px); }
+/* the line sits at the exact centre of the closing screen; the wordmark holds the foot */
+.outro__center { position: absolute; left: var(--gutter); right: var(--gutter); top: 50%; translate: 0 -50%; display: grid; justify-items: center; text-align: center; pointer-events: none; }
 .outro__line {
   position: relative; display: inline-block; font-size: clamp(3.2rem, 9vw, 9.6rem); line-height: 0.96; letter-spacing: -0.045em; font-weight: 500; text-align: center;
   padding-bottom: 0.16em; text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6);
@@ -237,7 +237,7 @@ html.no-webgl .story__text--jc::after { content: ""; position: absolute; right: 
   transform: scaleX(0); transition: transform 1.3s var(--ease-out) 0.45s;
 }
 .outro__line.is-revealed::after { transform: scaleX(1); }
-.outro__foot { width: 100%; display: grid; justify-items: center; }
+.outro__foot { width: 100%; max-width: 1400px; display: grid; justify-items: center; }
 .outro__wordmark {
   position: relative; width: 100%; aspect-ratio: 619 / 101; overflow: hidden;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.24) 50%, rgba(255, 255, 255, 0.07));
@@ -283,7 +283,6 @@ html.no-anim [data-reveal], html.no-anim .story__text--hero .eyebrow, html.no-an
   .store strong { font-size: 0.9rem; }
   .jc__link { margin-top: 12px; font-size: 0.85rem; }
   .scroll-cue { bottom: 26px; }
-  .outro__center { padding: 12vh 0 5vh; }
   .outro__line { font-size: clamp(2.9rem, 12vw, 6rem); }
   .outro__bar { flex-wrap: wrap; gap: 10px 24px; }
   .cursor { display: none; }
