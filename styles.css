@@ -167,10 +167,11 @@ body.hero-intro .story__text--hero .eyebrow, body.hero-intro .scroll-cue { opaci
 .jc > * { will-change: opacity, transform, filter; }
 .jc__logo { margin: 0; width: min(38vw, 520px); }
 .jc__logo img { width: 100%; height: auto; filter: drop-shadow(0 14px 44px rgba(233, 75, 31, 0.32)); }
-.jc__lead { margin-top: clamp(16px, 3vh, 30px); font-size: clamp(2rem, 3.7vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 500; color: var(--fg); max-width: 10ch; text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6); }
+.jc__lead { margin-top: clamp(16px, 3vh, 30px); font-size: clamp(2rem, 3.7vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 500; color: #fff; max-width: 10ch; text-wrap: balance; text-shadow: 0 2px 36px rgba(70, 25, 45, 0.55); }
+/* the italic words in Just Cooked's own burnt orange, so they hold against the bright sky */
 .jc__lead em {
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; padding-right: 0.06em;
-  background: linear-gradient(92deg, #fff3ea 0%, #ffc8a8 45%, var(--jc-warm) 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  background: linear-gradient(92deg, #f0612e 0%, #d8400f 55%, #b03410 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .stores { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: clamp(26px, 4.6vh, 42px); }
 .store {
