@@ -66,7 +66,7 @@ const texLoader = new THREE.TextureLoader();
 /* ---------- Particles ---------- */
 const COUNT = coarse ? 28000 : 60000;
 const WORD_W = 5.6;
-const PLANET_R = 3.6, PLANET_Y = -4.4, PLANET_TILT = -0.5;
+const PLANET_R = 3.6, PLANET_Y = -4.6, PLANET_TILT = -0.5;
 const HELIX = { turns: 3.0, R: 0.95, H: 6.4, pairs: 30 };
 
 const rand = new Float32Array(COUNT);
@@ -175,7 +175,7 @@ const uniforms = {
   uTo: { value: 1 },
   uMix: { value: 0 },
   uBright: { value: [1.0, 0.55, 0.4, 0.9, 0.22] },
-  uTint: { value: [new THREE.Color(1, 1, 1), new THREE.Color(0.78, 1, 0.84), new THREE.Color(0.65, 0.92, 1), new THREE.Color(1, 0.86, 0.72), new THREE.Color(0.75, 0.82, 1)] },
+  uTint: { value: [new THREE.Color(1, 1, 1), new THREE.Color(0.78, 1, 0.84), new THREE.Color(0.5, 0.78, 1), new THREE.Color(1, 0.86, 0.72), new THREE.Color(0.75, 0.82, 1)] },
   uWordScale: { value: 1 },
   uGalaxyScale: { value: 1 },
   uHelixOffset: { value: new THREE.Vector3(1.6, 0, 0) },
@@ -215,6 +215,16 @@ const material = new THREE.ShaderMaterial({
       if (i == 3) return rotY(aP3 * uGalaxyScale, uTime * 0.12);
       return aP4 + vec3(sin(uTime * 0.2 + aRand * 6.0) * 0.3, cos(uTime * 0.15 + aRand * 4.0) * 0.2, 0.0);
     }
+    /* the galaxy's colour runs from a warm core out to blue-white arms, with a few rose nebulae along them */
+    vec3 tintOf(int i, vec3 p) {
+      vec3 t = uTint[i];
+      if (i == 3) {
+        float r = length(p.xz) / uGalaxyScale;
+        t = mix(vec3(1.0, 0.9, 0.72), vec3(0.62, 0.8, 1.0), smoothstep(0.5, 2.6, r));
+        t = mix(t, vec3(1.0, 0.7, 0.85), step(0.93, aRand) * smoothstep(1.0, 2.0, r) * 0.85);
+      }
+      return t;
+    }
     float glow(int i, vec3 p) {
       if (i == 3) return 1.0 + 1.6 * max(0.0, 1.0 - length(p.xz) / (3.2 * uGalaxyScale));
       if (i == 1) {
@@ -246,7 +256,7 @@ const material = new THREE.ShaderMaterial({
       gl_Position = projectionMatrix * mv;
       gl_PointSize = uSize * uPixelRatio * (0.55 + aRand * 0.9) * (10.0 / -mv.z);
       float bright = mix(uBright[uFrom] * glow(uFrom, a), uBright[uTo] * glow(uTo, b), t);
-      vec3 tint = mix(uTint[uFrom], uTint[uTo], t);
+      vec3 tint = mix(tintOf(uFrom, a), tintOf(uTo, b), t);
       float twinkle = 0.7 + 0.3 * sin(uTime * 2.2 + aRand * 40.0);
       vAlpha = uGlobalAlpha * bright * twinkle * (0.45 + 0.55 * aRand) * (1.0 + sw * 0.6);
       vColor = aColor * tint;
@@ -443,7 +453,7 @@ const orbits = new THREE.Group();
 fx.add(orbits);
 const electronTex = glowTexture('rgba(255,255,255,1)', 'rgba(170,232,255,0.55)');
 const RING_FS = `uniform float uHead, uOpacity, uHalo; uniform vec3 uColor; varying vec2 vUv;
-  void main(){ float d = fract(uHead - vUv.x); float trail = exp(-d * 6.5); gl_FragColor = vec4(uColor * (0.6 + trail * 1.6), (0.32 + trail * 1.3) * uOpacity * uHalo); }`;
+  void main(){ float d = fract(uHead - vUv.x); float trail = exp(-d * 6.5); gl_FragColor = vec4(uColor * (0.6 + trail * 1.4), (0.3 + trail * 1.0) * uOpacity * uHalo); }`;
 const RING_VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
 const rings = [[0.62, 0.0, 0x9be8ff, 0.5, 0.4], [1.0, 0.75, 0xd2c4ff, 0.62, 2.5], [1.0, -0.75, 0x9be8ff, 0.74, 4.4]].map(([tilt, roll, color, speed, phase]) => {
   const ring = new THREE.Group();
@@ -451,7 +461,7 @@ const rings = [[0.62, 0.0, 0x9be8ff, 0.5, 0.4], [1.0, 0.75, 0xd2c4ff, 0.62, 2.5]
   ring.rotation.set(tilt, 0, roll);
   const shared = { uHead: { value: 0 }, uOpacity: { value: 0 }, uColor: { value: new THREE.Color(color) } };
   const mat = new THREE.ShaderMaterial({ uniforms: { ...shared, uHalo: { value: 1 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: RING_VS, fragmentShader: RING_FS });
-  const haloMat = new THREE.ShaderMaterial({ uniforms: { ...shared, uHalo: { value: 0.16 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: RING_VS, fragmentShader: RING_FS });
+  const haloMat = new THREE.ShaderMaterial({ uniforms: { ...shared, uHalo: { value: 0.11 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: RING_VS, fragmentShader: RING_FS });
   ring.add(new THREE.Mesh(new THREE.TorusGeometry(ORBIT_R, 0.02, 8, 360), mat));
   ring.add(new THREE.Mesh(new THREE.TorusGeometry(ORBIT_R, 0.085, 8, 360), haloMat));
   const electron = new THREE.Sprite(new THREE.SpriteMaterial({ map: electronTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -494,30 +504,28 @@ function neonMat(color, core, pulse) {
   });
 }
 {
-  const strand = neonMat(0x4db3ff, 0xd9f1ff, 1);
-  const cyan = neonMat(0x33d9ff, 0xb3ffff, 0);
-  const violet = neonMat(0x8c5cff, 0xd9ccff, 0);
-  const node = neonMat(0xb3e6ff, 0xffffff, 0);
+  /* all shades of blue: two continuous backbones, rungs in a light and a deep blue */
+  const strand = neonMat(0x3d9bff, 0xcfe8ff, 1);
+  const light = neonMat(0x5cc8ff, 0xd0f4ff, 0);
+  const deep = neonMat(0x2457ff, 0xb3c8ff, 0);
   const { turns, R, H, pairs } = HELIX;
   [0, Math.PI].forEach((phase) => {
     const pts = [];
     for (let i = 0; i <= 600; i++) { const k = i / 600, t = k * Math.PI * 2 * turns + phase; pts.push(new THREE.Vector3(Math.cos(t) * R, (k - 0.5) * H, Math.sin(t) * R)); }
-    dna.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 600, 0.05, 12, false), strand));
+    dna.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 600, 0.06, 12, false), strand));
   });
   const up = new THREE.Vector3(0, 1, 0);
-  const rungGeo = new THREE.CylinderGeometry(0.032, 0.032, 1, 10);
-  const nodeGeo = new THREE.SphereGeometry(0.075, 20, 14);
+  const rungGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 10);
   for (let j = 0; j < pairs; j++) {
     const k = (j + 0.5) / pairs, t = k * Math.PI * 2 * turns, y = (k - 0.5) * H;
     const A = new THREE.Vector3(Math.cos(t) * R, y, Math.sin(t) * R), B = new THREE.Vector3(-A.x, y, -A.z), M = new THREE.Vector3(0, y, 0);
-    [[A, M, cyan], [M, B, violet]].forEach(([p, q, mat]) => {
+    [[A, M, light], [M, B, deep]].forEach(([p, q, mat]) => {
       const m = new THREE.Mesh(rungGeo, mat);
       m.position.copy(p).add(q).multiplyScalar(0.5);
-      m.scale.y = p.distanceTo(q) * 0.97;
+      m.scale.y = p.distanceTo(q) * 0.94;
       m.quaternion.setFromUnitVectors(up, q.clone().sub(p).normalize());
       dna.add(m);
     });
-    [A, B].forEach((p) => { const s = new THREE.Mesh(nodeGeo, node); s.position.copy(p); dna.add(s); });
   }
 }
 
@@ -527,6 +535,72 @@ core.scale.setScalar(1.6);
 fx.add(core);
 const sunPos = new THREE.Vector3(1.5, -2, -10.8);
 const ORIGIN = new THREE.Vector3();
+
+/* deep space around the galaxy: thousands of distant stars and a soft nebula haze */
+const STAR_COUNT = coarse ? 1600 : 3600;
+const starGeo = new THREE.BufferGeometry();
+{
+  const p = new Float32Array(STAR_COUNT * 3), r = new Float32Array(STAR_COUNT);
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), rad = 28 + Math.random() * 30;
+    p[i * 3] = rad * Math.sin(ph) * Math.cos(th); p[i * 3 + 1] = rad * Math.cos(ph); p[i * 3 + 2] = rad * Math.sin(ph) * Math.sin(th);
+    r[i] = Math.random();
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  starGeo.setAttribute('aR', new THREE.BufferAttribute(r, 1));
+}
+const starMat = new THREE.ShaderMaterial({
+  uniforms: { uOpacity: { value: 0 }, uTime: uniforms.uTime, uPixelRatio: uniforms.uPixelRatio },
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: `uniform float uOpacity, uTime, uPixelRatio; attribute float aR; varying float vA; varying float vR;
+    void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = (1.3 + aR * 2.2) * uPixelRatio; vR = aR;
+      vA = uOpacity * (0.35 + 0.65 * aR) * (0.7 + 0.3 * sin(uTime * (0.8 + aR * 2.5) + aR * 60.0)); }`,
+  fragmentShader: `varying float vA; varying float vR; void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c); if (d > 0.5) discard; float a = smoothstep(0.5, 0.08, d);
+    vec3 col = mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.92, 0.8), step(0.8, vR)); gl_FragColor = vec4(col, a * vA); }`,
+});
+const stars = new THREE.Points(starGeo, starMat);
+stars.frustumCulled = false;
+fx.add(stars);
+function softTexture(rgb) {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, `rgba(${rgb},1)`); g.addColorStop(0.35, `rgba(${rgb},0.45)`); g.addColorStop(0.7, `rgba(${rgb},0.12)`); g.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+/* a handful of brighter stars with four-point flares */
+function flareTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.12, 'rgba(255,255,255,0.7)'); g.addColorStop(0.4, 'rgba(200,225,255,0.08)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+  [[0, 64, 128, 64], [64, 0, 64, 128]].forEach(([x0, y0, x1, y1]) => {
+    const lg = ctx.createLinearGradient(x0, y0, x1, y1);
+    lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, 'rgba(255,255,255,0.75)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.strokeStyle = lg; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const flareTex = flareTexture();
+const flares = Array.from({ length: 14 }, (_, i) => {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: flareTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1) * 0.5, rad = 24 + Math.random() * 14;
+  s.position.set(rad * Math.sin(ph) * Math.cos(th), rad * Math.cos(ph) * 0.6 + 4, rad * Math.sin(ph) * Math.sin(th) - 8);
+  s.scale.setScalar(1.2 + Math.random() * 2.2);
+  s.userData = { max: 0.45 + Math.random() * 0.5, spin: Math.random() * Math.PI, i };
+  fx.add(s);
+  return s;
+});
+const nebulae = [['120,90,255', 11, 0.07, 1.4, -1.6], ['255,160,110', 5.5, 0.1, -0.4, 0.2], ['60,140,255', 8, 0.06, -2.6, 1.4], ['255,110,170', 6, 0.05, 2.8, 1.2]].map(([rgb, scale, opacity, x, z]) => {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTexture(rgb), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  s.scale.setScalar(scale);
+  s.position.set(x, -0.2, z);
+  s.userData.max = opacity;
+  fx.add(s);
+  return s;
+});
 
 /* lights for the chrome wordmark */
 fx.add(new THREE.DirectionalLight(0xffffff, 1.2).translateX(2).translateY(4).translateZ(6));
@@ -656,7 +730,7 @@ front.add(phone);
 /* The stage: a sunset sky with a half-set sun and drifting clouds, and water the phone stands on, reflecting both */
 const stage = new THREE.Group();
 front.add(stage);
-const SKY = { zenith: new THREE.Color(0x070712), mid: new THREE.Color(0x3a1535), low: new THREE.Color(0x6b2a16), sun: new THREE.Color(0xff9a52) };
+const SKY = { zenith: new THREE.Color(0x0f1133), mid: new THREE.Color(0x56244f), low: new THREE.Color(0x8c3f1d), sun: new THREE.Color(0xffa058) };
 const skyMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
   uniforms: { uIn: { value: 0 }, uHorizon: { value: -2 }, uSunX: { value: 1.5 }, uSunR: { value: 1.1 }, uShadeX: { value: -3 }, uTime: uniforms.uTime, uZenith: { value: SKY.zenith }, uMid: { value: SKY.mid }, uLow: { value: SKY.low }, uSun: { value: SKY.sun } },
@@ -666,24 +740,45 @@ const skyMat = new THREE.ShaderMaterial({
     float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
       return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x), u.y); }
     float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * vnoise(p); p = p * 2.03 + vec2(17.1, 9.2); a *= 0.5; } return v; }
+    /* wispy, domain-warped cloud density */
+    float clouds(vec2 p){ vec2 q = vec2(fbm(p), fbm(p + vec2(5.2, 1.3))); return fbm(p + 1.4 * q); }
     void main(){
       float up = max(vW.y - uHorizon, 0.0);
       float h = clamp(up / 11.0, 0.0, 1.0);
-      vec3 sky = mix(uLow, uMid, smoothstep(0.0, 0.32, h));
-      sky = mix(sky, uZenith, smoothstep(0.25, 1.0, h));
-      /* the sun, half set */
-      float d = length(vec2((vW.x - uSunX) * 0.95, vW.y - (uHorizon + 0.1)));
-      float disc = smoothstep(uSunR * 1.05, uSunR * 0.86, d);
-      float glow = exp(-d / 3.0) * 0.75 + exp(-d / 8.0) * 0.3;
-      sky += uSun * (disc * 1.1 + glow);
-      /* clouds: long, slow streaks, their undersides lit pink and orange by the low sun */
-      float c = fbm(vec2(vW.x * 0.13 + uTime * 0.008, up * 0.42));
-      float band = smoothstep(0.5, 1.8, up) * (1.0 - smoothstep(4.5, 9.5, up));
-      float dens = smoothstep(0.48, 0.78, c) * band;
-      float edge = dens * (1.0 - dens) * 4.0;
+      vec3 sky = mix(uLow, uMid, smoothstep(0.0, 0.3, h));
+      sky = mix(sky, uZenith, smoothstep(0.22, 1.0, h));
+      /* the sun, half set, with a wide soft corona */
+      vec2 sv = vec2((vW.x - uSunX) * 0.95, vW.y - (uHorizon + 0.1));
+      float d = length(sv);
+      float disc = smoothstep(uSunR * 1.08, uSunR * 0.84, d);
+      float glow = exp(-d / 2.2) * 0.55 + exp(-d / 5.0) * 0.4 + exp(-d / 12.0) * 0.22;
       float near = exp(-d / 7.0);
-      vec3 cloud = mix(uMid * 0.75, uSun * 0.55, 0.25 + near * 0.6) + uSun * edge * (0.25 + near * 0.45);
-      vec3 col = mix(sky, cloud, dens * 0.8);
+      float warmX = exp(-pow((vW.x - uSunX) / 10.0, 2.0));
+      /* haze: a pale, luminous mist lying on the horizon */
+      vec3 mist = mix(uSun * 0.7, uMid * 1.5, 0.4);
+      sky = mix(sky, mist, exp(-up / 2.2) * (0.2 + 0.3 * warmX));
+      sky += uSun * (disc * 1.15 + glow);
+      /* low clouds: long banks with real shape, dark mauve in their own shadow, lit rose and gold along their
+         undersides and on the side that faces the sun */
+      vec2 p1 = vec2(vW.x * 0.085 + uTime * 0.005, up * 0.3);
+      float c1 = clouds(p1);
+      float band1 = smoothstep(0.6, 2.2, up) * (1.0 - smoothstep(5.0, 9.5, up));
+      float d1 = smoothstep(0.46, 0.6, c1) * band1;
+      vec2 toSun = normalize(vec2(uSunX - vW.x, (uHorizon + 0.1) - vW.y) + vec2(0.0001));
+      vec2 lightDir = normalize(toSun * vec2(0.085, 0.3) + vec2(0.0, -0.08));
+      float lit1 = clamp(0.5 + (c1 - clouds(p1 + lightDir * 0.1)) * 14.0, 0.0, 1.0);
+      float edge1 = smoothstep(0.0, 0.5, d1) * (1.0 - smoothstep(0.5, 1.0, d1));
+      vec3 shade1 = uMid * 0.72 + uZenith * 0.35;
+      vec3 lit1c = mix(vec3(0.98, 0.6, 0.66), uSun * 1.12, near * 0.75);
+      vec3 cloud1 = mix(shade1, lit1c, lit1 * (0.5 + 0.5 * near)) + lit1c * edge1 * lit1 * 0.35;
+      /* high cirrus: thin pale-rose wisps, stretched, drifting slower */
+      vec2 p2 = vec2(vW.x * 0.05 + uTime * 0.0025 + 19.0, up * 0.5 + 3.0);
+      float w = 1.0 - abs(2.0 * fbm(p2) - 1.0);
+      float band2 = smoothstep(4.0, 7.0, up) * (1.0 - smoothstep(10.5, 15.0, up));
+      float d2 = smoothstep(0.74, 0.97, w) * band2;
+      vec3 cloud2 = mix(vec3(0.8, 0.56, 0.72), vec3(1.0, 0.82, 0.72), near * 0.7 + 0.1);
+      vec3 col = mix(sky, cloud2, d2 * 0.55);
+      col = mix(col, cloud1, d1 * 0.92);
       /* a little shade where the copy sits */
       col *= 1.0 - 0.35 * exp(-pow((vW.x - uShadeX) / 7.0, 2.0)) * (1.0 - smoothstep(4.0, 8.0, up));
       col += (hash21(gl_FragCoord.xy) - 0.5) / 160.0;
@@ -755,7 +850,7 @@ function layout() {
   const vw = visibleWidth();
   HY.storyWordScale = Math.min(1, (vw * (stacked ? 0.88 : 0.66)) / WORD_W);
   uniforms.uWordScale.value = HY.storyWordScale;
-  uniforms.uGalaxyScale.value = stacked ? 0.62 : Math.min(1, vw / 9.2);
+  uniforms.uGalaxyScale.value = stacked ? 0.7 : Math.min(1, vw / 9.2);
   uniforms.uHelixOffset.value.set(stacked ? 0 : 1.75, stacked ? -1.75 : 0, 0); // on phones the helix hangs below the title
   uniforms.uLean.value = stacked ? 0 : -0.14;
   uniforms.uHelixScale.value = stacked ? 0.72 : 1;
@@ -777,7 +872,7 @@ function layout() {
   arcFadeY.value = stacked ? -0.8 : -0.65;
   CAM[2].p.x = stacked ? 0 : 0.4;
   CAM[2].l.y = stacked ? 0.9 : 0;
-  CAM[3].l.y = stacked ? -1.4 : -0.7;
+  CAM[3].l.y = stacked ? -0.55 : -0.7;
   CAM[4].l.y = stacked ? 0.35 : -0.25;
 }
 function resize() {
@@ -863,6 +958,12 @@ function applyState(dt) {
     core.scale.setScalar(1.6);
   }
   core.material.opacity = coreOpacity;
+  /* space stays until the sunset sky has covered it — that is the way back to earth */
+  const toStage = st.from === 3 && st.to === 4 ? st.mix : 0;
+  const space = Math.max(wGal, toStage) * (1 - ss(smooth, 0.5, 0.57));
+  starMat.uniforms.uOpacity.value = space;
+  flares.forEach((s) => { s.material.opacity = space * s.userData.max; s.material.rotation = s.userData.spin; });
+  nebulae.forEach((s) => { s.material.opacity = s.userData.max * wGal; });
 
   /* the chrome HYAICO takes over from the particle letters; nothing sparkles on it */
   const chromeIn = ss(smooth, 0.84, 0.9);
@@ -890,7 +991,7 @@ function applyState(dt) {
 
   /* the stage: sky and water fade in, the phone rises out of the water, then sinks back */
   const stageIn = ss(smooth, 0.5, 0.57) * (1 - ss(smooth, 0.7, 0.77));
-  const target = ss(smooth, 0.54, 0.62) * (1 - ss(smooth, 0.68, 0.74));
+  const target = ss(smooth, 0.568, 0.635) * (1 - ss(smooth, 0.68, 0.74));   /* the phone rises once the water is fully there */
   phoneIn += (target - phoneIn) * (1 - Math.pow(0.001, dt));
   stage.visible = stageIn > 0.002;
   phone.visible = phoneIn > 0.002;

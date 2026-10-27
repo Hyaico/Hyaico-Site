@@ -46,11 +46,8 @@ h1, h2, p { margin: 0; }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 4px; }
 
 /* ---------- Ambient ---------- */
-/* one continuous wash, top to bottom — no shapes, no edges */
-.bg-glow {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(69, 227, 255, 0.035) 0%, transparent 28%, transparent 66%, rgba(124, 92, 255, 0.1) 100%);
-}
+/* the page's own black is the background everywhere; the stage paints all the colour */
+.bg-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--bg); }
 .grain {
   position: fixed; inset: -100%; z-index: 9000; pointer-events: none; opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -148,12 +145,10 @@ html.no-js body { overflow: auto; }
   position: absolute; inset: 0; display: grid; align-content: center; justify-items: center;
   padding: 0 var(--gutter); text-align: center; pointer-events: none; opacity: 0; will-change: opacity, transform, filter;
 }
-.story__text--hero { opacity: 1; }
+.story__text--hero { opacity: 1; padding-bottom: 18vh; }   /* the line sits well above the globe */
 .story__text .eyebrow { margin-bottom: clamp(18px, 3vh, 30px); }
-.title {
-  font-size: clamp(3rem, 9vw, 9.4rem); line-height: 0.94; letter-spacing: -0.045em; font-weight: 500; max-width: 12ch; text-wrap: balance;
-  text-shadow: 0 2px 50px rgba(0, 0, 0, 0.55);
-}
+/* no text-shadow here: the line masks would clip it into a visible box */
+.title { font-size: clamp(3rem, 9vw, 9.4rem); line-height: 0.94; letter-spacing: -0.045em; font-weight: 500; max-width: 12ch; text-wrap: balance; }
 .title .line { padding-bottom: 0.08em; }
 .title em {
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.02em; padding-right: 0.08em;
@@ -170,8 +165,6 @@ body.hero-intro .story__text--hero .eyebrow, body.hero-intro .scroll-cue { opaci
 .story__text--jc { justify-items: start; text-align: left; align-content: center; padding-left: clamp(100px, 19vw, 300px); padding-right: 42%; }
 .jc { display: grid; justify-items: start; }
 .jc > * { will-change: opacity, transform, filter; }
-.jc__eyebrow { color: #ffb48c; margin-bottom: clamp(18px, 3vh, 30px); }
-.jc__eyebrow .live-dot { background: var(--jc-warm); color: rgba(255, 138, 92, 0.6); }
 .jc__logo { margin: 0; width: min(38vw, 520px); }
 .jc__logo img { width: 100%; height: auto; filter: drop-shadow(0 14px 44px rgba(233, 75, 31, 0.32)); }
 .jc__lead { margin-top: clamp(16px, 3vh, 30px); font-size: clamp(2rem, 3.7vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 500; color: var(--fg); max-width: 10ch; text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6); }
@@ -179,12 +172,7 @@ body.hero-intro .story__text--hero .eyebrow, body.hero-intro .scroll-cue { opaci
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; padding-right: 0.06em;
   background: linear-gradient(92deg, #fff3ea 0%, #ffc8a8 45%, var(--jc-warm) 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-/* which of the app's screens the phone is showing */
-.jc__screens { display: flex; gap: 6px; margin-top: clamp(18px, 3vh, 28px); }
-.jc__screens i { position: relative; width: 44px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
-.jc__screens i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--jc-warm), #ffc8a8); transform: scaleX(0); transform-origin: left; transition: transform 0.7s var(--ease-out), opacity 0.4s; }
-.jc__screens i.is-on::after { transform: scaleX(1); }
-.stores { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: clamp(22px, 4vh, 36px); }
+.stores { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: clamp(26px, 4.6vh, 42px); }
 .store {
   display: inline-flex; align-items: center; gap: 14px; min-height: 62px; padding: 12px 24px 12px 18px; border-radius: 18px; pointer-events: auto;
   background: var(--jc-cream); color: #1a1815; border: 1px solid var(--jc-cream); box-shadow: 0 18px 50px -18px rgba(255, 180, 140, 0.5); will-change: transform;
@@ -214,17 +202,14 @@ html.no-webgl .story__text--jc::after { content: ""; position: absolute; right: 
 @keyframes cue { 0% { top: -14px; } 70%, 100% { top: 100%; } }
 
 /* ---------- Ending ---------- */
-/* one continuous background: the stage shows through, lifting very gently toward the foot of the page */
-.outro {
-  position: relative; z-index: 2; min-height: 100vh; min-height: 100svh; display: flex; overflow: hidden;
-  background: linear-gradient(180deg, transparent 0%, rgba(12, 10, 24, 0.3) 50%, rgba(18, 14, 38, 0.72) 100%);
-}
+/* one flat, quiet background: the page's own black, nothing layered on it */
+.outro { position: relative; z-index: 2; min-height: 100vh; min-height: 100svh; display: flex; overflow: hidden; }
 .outro__inner {
   position: relative; width: 100%; max-width: var(--container); margin-inline: auto; min-height: 100vh; min-height: 100svh;
-  padding: 0 var(--gutter) 28px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  padding: 0 var(--gutter) 28px; display: grid; grid-template-rows: 1fr auto; justify-items: center;
 }
-/* the line sits at the exact centre of the closing screen; the wordmark holds the foot */
-.outro__center { position: absolute; left: var(--gutter); right: var(--gutter); top: 50%; translate: 0 -50%; display: grid; justify-items: center; text-align: center; pointer-events: none; }
+/* the line sits at the centre of the space above the wordmark, with equal room above and below it */
+.outro__center { display: grid; justify-items: center; align-content: center; text-align: center; padding: 5vh 0; }
 .outro__line {
   position: relative; display: inline-block; font-size: clamp(3.2rem, 9vw, 9.6rem); line-height: 0.96; letter-spacing: -0.045em; font-weight: 500; text-align: center;
   padding-bottom: 0.16em; text-wrap: balance; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.6);
@@ -240,13 +225,13 @@ html.no-webgl .story__text--jc::after { content: ""; position: absolute; right: 
 .outro__foot { width: 100%; max-width: 1400px; display: grid; justify-items: center; }
 .outro__wordmark {
   position: relative; width: 100%; aspect-ratio: 619 / 101; overflow: hidden;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.24) 50%, rgba(255, 255, 255, 0.07));
-  -webkit-mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(#000 20%, transparent 100%);
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(#000 30%, transparent 100%);
   -webkit-mask-size: 100% auto, 100% 100%; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-composite: source-in;
-  mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(#000 20%, transparent 100%);
+  mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(#000 30%, transparent 100%);
   mask-size: 100% auto, 100% 100%; mask-repeat: no-repeat; mask-position: center; mask-composite: intersect;
 }
-.outro__wordmark i { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(69, 227, 255, 0.55) 50%, transparent 65%); transform: translateX(-100%); animation: wmsweep 7s var(--ease-in-out) infinite; }
+.outro__wordmark i { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(180, 236, 255, 0.5) 50%, transparent 65%); transform: translateX(-100%); animation: wmsweep 7s var(--ease-in-out) infinite; }
 @keyframes wmsweep { 0% { transform: translateX(-100%); } 45%, 100% { transform: translateX(100%); } }
 .outro__bar { width: 100%; display: flex; justify-content: space-between; gap: 24px; padding-top: 22px; margin-top: 22px; border-top: 1px solid var(--line); font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.06em; color: var(--muted); }
 .outro__bar a { transition: color 0.3s; }
@@ -271,12 +256,10 @@ html.no-anim [data-reveal], html.no-anim .story__text--hero .eyebrow, html.no-an
   .story__text--galaxy { padding-top: clamp(90px, 15vh, 160px); }
   .story__text--jc { padding-left: var(--gutter); padding-right: var(--gutter); justify-items: center; text-align: center; align-content: end; padding-bottom: clamp(24px, 5vh, 56px); }
   .jc { justify-items: center; }
-  .jc__eyebrow { margin-bottom: 10px; }
   .jc__logo { width: min(64vw, 320px); }
   .jc__lead { margin-top: 8px; font-size: clamp(1.25rem, 5.4vw, 1.7rem); }
-  .jc__screens { margin-top: 12px; }
-  .jc__screens i { width: 28px; }
-  .stores { margin-top: 14px; gap: 8px; justify-content: center; }
+  .stores { margin-top: 18px; gap: 8px; justify-content: center; }
+  .story__text--hero { padding-bottom: 14vh; }
   .store { min-height: 46px; padding: 6px 14px 6px 12px; border-radius: 12px; gap: 8px; }
   .store svg { width: 20px; height: 20px; }
   .store small { font-size: 0.5rem; }

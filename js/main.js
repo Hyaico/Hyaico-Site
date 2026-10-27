@@ -141,9 +141,7 @@
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
     if (heroLines) tl.to(heroLines, { yPercent: 0, duration: 1.4, stagger: 0.14 }, 0.1);
     else tl.from(heroText.querySelector('.title'), { opacity: 0, y: 40, duration: 1.2 }, 0.1);
-    tl.to(heroText.querySelector('.eyebrow'), { opacity: 1, duration: 0.6 }, 0)
-      .add(scramble(heroText.querySelector('[data-scramble]'), 1.0) || gsap.to({}, { duration: 0 }), 0)
-      .to(scrollCue, { opacity: 1, duration: 1 }, 1.0)
+    tl.to(scrollCue, { opacity: 1, duration: 1 }, 1.0)
       .call(() => body.classList.remove('hero-intro'));
     return tl;
   }
@@ -169,7 +167,6 @@
         onUpdate: (self) => {
           HY.progress = self.progress;
           if (scrollCue) scrollCue.style.opacity = self.progress > 0.02 ? '0' : '';
-          if (self.progress > 0.54 && !jc.dataset.scrambled) { jc.dataset.scrambled = '1'; scramble(jc.querySelector('[data-scramble]'), 0.9); }
         },
       },
     });
@@ -198,12 +195,6 @@
       .fromTo(jcKids, { opacity: 0, y: 36, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.035, stagger: 0.006, ease: 'power3.out' }, 0.555)
       .to(jc, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.7)
       .to({}, { duration: 0.25 });
-
-    /* which screen the phone is showing */
-    const bars = jc.querySelectorAll('.jc__screens i');
-    const setBars = (k) => bars.forEach((b) => b.classList.toggle('is-on', b.dataset.screen === k));
-    setBars(HY.screen || 'home');
-    window.addEventListener('scene:screen', (e) => setBars(e.detail));
 
     /* Progress bar */
     const progress = document.querySelector('.progress span');
