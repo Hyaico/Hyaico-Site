@@ -1,255 +1,387 @@
 /* ==========================================================================
-   HYAICO — Hero scene (Three.js)
-   The HYAICO wordmark, extruded from the real logo path in polished chrome,
-   floating in front of a glass core with orbital rings, a wireframe shell,
-   a holographic grid floor and a particle field. Letters assemble on intro,
-   a light sweep travels across the chrome, and everything reacts to the
-   pointer and to scroll. Degrades gracefully.
+   HYAICO — The stage (Three.js)
+   One particle system, tens of thousands of points, morphing between five
+   forms as the page scrolls:
+     0 wordmark  — the HYAICO logo, sampled from the real logo path
+     1 planet    — a glowing horizon beneath the hero title
+     2 helix     — a double helix
+     3 field     — a flowing data landscape
+     4 phone     — the silhouette of a handset, into which a modelled phone
+                   running Just Cooked appears
+   The loader hands over to the particle wordmark, which then becomes the
+   planet. Camera moves and swirl are scrubbed by scroll. Degrades gracefully.
    ========================================================================== */
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-const canvas = document.getElementById('scene');
+const canvas = document.getElementById('gl');
 const html = document.documentElement;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const mobileQuery = matchMedia('(max-width: 860px)');
 const coarse = matchMedia('(pointer: coarse)').matches;
-
-let isMobile = mobileQuery.matches;
-let lowQuality = coarse;
+const HY = (window.HY = window.HY || {});
+HY.progress = 0; // 0..1, written by the scroll story in main.js
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: !coarse, alpha: true, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
 } catch (err) {
   html.classList.add('no-webgl');
   throw err;
 }
-
 renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.95;
+renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-camera.position.set(0, 0, 8.2);
+camera.position.set(0, 0, 10);
 
-/* ---------- Environment ---------- */
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 pmrem.dispose();
 
-/* ---------- Lights ---------- */
-scene.add(new THREE.AmbientLight(0xffffff, 0.12));
-const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-sun.position.set(2, 5, 6);
-scene.add(sun);
-const violetLight = new THREE.PointLight(0x7c5cff, 70, 30, 1.6);
-violetLight.position.set(-5, 2.5, 3);
-scene.add(violetLight);
-const cyanLight = new THREE.PointLight(0x45e3ff, 60, 30, 1.6);
-cyanLight.position.set(5, -1.5, 3);
-scene.add(cyanLight);
-const sweep = new THREE.PointLight(0xffffff, 32, 10, 1.8); // travels across the chrome
-sweep.position.set(-6, 2, 2.2);
-scene.add(sweep);
+/* ---------- Particles ---------- */
+const COUNT = coarse ? 36000 : 90000;
+const WORD_W = 5.6;                 // wordmark width in world units at scale 1
+const PLANET_R = 3.6, PLANET_Y = -4.4;
+const PHONE_H = 4.0;                // phone height in world units at uPhoneScale 1
 
-/* ---------- Root group (positioned per layout) ---------- */
-const root = new THREE.Group();
-scene.add(root);
-
-/* ---------- Glass core, rings, satellites, shell ---------- */
-const core = new THREE.Group();
-core.position.set(0, 0, -1.15);
-root.add(core);
-
-const glassMat = new THREE.MeshPhysicalMaterial({
-  color: 0xf4f2ff, transmission: 1, thickness: 1.2, roughness: 0.08, ior: 1.45,
-  iridescence: 0.55, iridescenceIOR: 1.3, iridescenceThicknessRange: [100, 520],
-  clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.5, specularIntensity: 0.55,
-  attenuationColor: new THREE.Color(0x6a5cff), attenuationDistance: 1.5,
-});
-const orb = new THREE.Mesh(new THREE.SphereGeometry(1.15, isMobile ? 48 : 96, isMobile ? 32 : 64), glassMat);
-core.add(orb);
-
-const shell = new THREE.LineSegments(
-  new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(1.78, 2)),
-  new THREE.LineBasicMaterial({ color: 0x45e3ff, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false })
-);
-core.add(shell);
-
-const ringMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.25, envMapIntensity: 1.2, emissive: 0x7c5cff, emissiveIntensity: 0.3 });
-const ringA = new THREE.Mesh(new THREE.TorusGeometry(2.25, 0.011, 12, 240), ringMat);
-ringA.rotation.set(1.3, 0.3, 0);
-const ringB = new THREE.Mesh(new THREE.TorusGeometry(2.65, 0.008, 12, 240), ringMat.clone());
-ringB.material.emissive = new THREE.Color(0x45e3ff);
-ringB.rotation.set(-1.1, 0.55, 0.35);
-core.add(ringA, ringB);
-
-const satGeo = new THREE.SphereGeometry(0.1, 32, 24);
-const satellites = [];
-for (let i = 0; i < 3; i++) {
-  const m = new THREE.Mesh(satGeo, glassMat.clone());
-  m.material.attenuationColor = new THREE.Color(i === 1 ? 0x45e3ff : 0xffffff);
-  m.userData = { radius: i === 0 ? 2.25 : 2.65, speed: 0.22 + i * 0.07, phase: (i / 3) * Math.PI * 2, ring: i === 0 ? ringA : ringB };
-  core.add(m);
-  satellites.push(m);
+const rand = new Float32Array(COUNT);
+const colors = new Float32Array(COUNT * 3);
+const palette = [[1, 1, 1], [0.72, 0.94, 1], [0.84, 0.78, 1], [1, 1, 1]];
+for (let i = 0; i < COUNT; i++) {
+  rand[i] = Math.random();
+  const c = palette[(Math.random() * palette.length) | 0];
+  colors[i * 3] = c[0]; colors[i * 3 + 1] = c[1]; colors[i * 3 + 2] = c[2];
 }
 
-/* ---------- Holographic grid floor (custom shader) ---------- */
-const gridMat = new THREE.ShaderMaterial({
-  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-  uniforms: { uTime: { value: 0 }, uColorA: { value: new THREE.Color(0x45e3ff) }, uColorB: { value: new THREE.Color(0x7c5cff) } },
-  vertexShader: `
-    varying vec2 vUv; varying vec3 vPos;
-    void main(){ vUv = uv; vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-  fragmentShader: `
-    uniform float uTime; uniform vec3 uColorA; uniform vec3 uColorB;
-    varying vec2 vUv; varying vec3 vPos;
-    float gridLine(vec2 p, float w){ vec2 g = abs(fract(p - 0.5) - 0.5) / fwidth(p); float l = min(g.x, g.y); return 1.0 - smoothstep(0.0, w, l); }
-    void main(){
-      vec2 p = vPos.xy * 1.6;
-      float minor = gridLine(p, 1.2) * 0.35;
-      float major = gridLine(p * 0.25, 1.4) * 0.9;
-      float d = length(vPos.xy) / 7.0;
-      float fade = smoothstep(1.0, 0.15, d);
-      float pulse = smoothstep(0.08, 0.0, abs(fract(uTime * 0.09) * 1.25 - d)) * 0.9;
-      vec3 col = mix(uColorA, uColorB, clamp(vPos.x / 10.0 + 0.5, 0.0, 1.0));
-      float a = (minor + major) * fade * 0.55 + pulse * fade * 0.5;
-      gl_FragColor = vec4(col, a);
+function cloudPoints() {
+  const a = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    a[i * 3] = (Math.random() - 0.5) * 12;
+    a[i * 3 + 1] = (Math.random() - 0.5) * 7;
+    a[i * 3 + 2] = (Math.random() - 0.5) * 6;
+  }
+  return a;
+}
+function planetPoints() {
+  const a = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    const r = PLANET_R + (Math.random() < 0.8 ? 0 : (Math.random() - 0.5) * 0.6);
+    a[i * 3] = r * Math.sin(ph) * Math.cos(th);
+    a[i * 3 + 1] = r * Math.cos(ph);
+    a[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+  }
+  return a;
+}
+function helixPoints() {
+  const a = new Float32Array(COUNT * 3);
+  const turns = 3.2, R = 1.25, H = 6.2, rungs = 30;
+  for (let i = 0; i < COUNT; i++) {
+    const kind = i % 5;
+    let x, y, z;
+    if (kind < 4) {
+      const k = Math.random();
+      const t = k * Math.PI * 2 * turns + (kind < 2 ? 0 : Math.PI);
+      x = Math.cos(t) * R; y = (k - 0.5) * H; z = Math.sin(t) * R;
+    } else {
+      const j = (Math.random() * rungs) | 0;
+      const k = (j + 0.5) / rungs;
+      const t = k * Math.PI * 2 * turns;
+      const s = Math.random() * 0.8 + 0.1;
+      x = Math.cos(t) * R * (1 - 2 * s); y = (k - 0.5) * H; z = Math.sin(t) * R * (1 - 2 * s);
+    }
+    a[i * 3] = x + (Math.random() - 0.5) * 0.05;
+    a[i * 3 + 1] = y + (Math.random() - 0.5) * 0.05;
+    a[i * 3 + 2] = z + (Math.random() - 0.5) * 0.05;
+  }
+  return a;
+}
+function fieldPoints() {
+  const a = new Float32Array(COUNT * 3);
+  const cols = Math.ceil(Math.sqrt(COUNT * 1.6));
+  const rows = Math.ceil(COUNT / cols);
+  for (let i = 0; i < COUNT; i++) {
+    const c = i % cols, r = (i / cols) | 0;
+    const x = (c / cols - 0.5) * 14;
+    const z = (r / rows - 0.5) * 10 - 1;
+    const y = -1.1 + 0.45 * Math.sin(x * 0.75) * Math.cos(z * 0.9) + 0.18 * Math.sin(x * 1.9 + z * 1.4);
+    a[i * 3] = x; a[i * 3 + 1] = y; a[i * 3 + 2] = z;
+  }
+  return a;
+}
+function samplePoints(meshes, weights) {
+  const a = new Float32Array(COUNT * 3);
+  const v = new THREE.Vector3();
+  const samplers = meshes.map((m) => new MeshSurfaceSampler(m).build());
+  const total = weights.reduce((s, w) => s + w, 0);
+  let i = 0;
+  samplers.forEach((s, k) => {
+    const n = k === samplers.length - 1 ? COUNT - i : Math.round((weights[k] / total) * COUNT);
+    for (let j = 0; j < n && i < COUNT; j++, i++) {
+      s.sample(v);
+      meshes[k].localToWorld(v);
+      a[i * 3] = v.x; a[i * 3 + 1] = v.y; a[i * 3 + 2] = v.z;
+    }
+  });
+  return a;
+}
+
+const geo = new THREE.BufferGeometry();
+const planet = planetPoints();
+geo.setAttribute('position', new THREE.BufferAttribute(planet, 3));
+geo.setAttribute('aP0', new THREE.BufferAttribute(cloudPoints(), 3));   // wordmark (replaced when the logo loads)
+geo.setAttribute('aP1', new THREE.BufferAttribute(planet, 3));
+geo.setAttribute('aP2', new THREE.BufferAttribute(helixPoints(), 3));
+geo.setAttribute('aP3', new THREE.BufferAttribute(fieldPoints(), 3));
+geo.setAttribute('aP4', new THREE.BufferAttribute(cloudPoints(), 3));   // phone (replaced once the phone is built)
+geo.setAttribute('aRand', new THREE.BufferAttribute(rand, 1));
+geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+
+const uniforms = {
+  uTime: { value: 0 },
+  uPixelRatio: { value: 1 },
+  uSize: { value: coarse ? 2.1 : 1.55 },
+  uFrom: { value: 0 },
+  uTo: { value: 1 },
+  uMix: { value: 0 },
+  uBright: { value: [1.0, 0.5, 0.85, 0.95, 0.8] },
+  uTint: { value: [new THREE.Color(1, 1, 1), new THREE.Color(0.8, 0.9, 1), new THREE.Color(0.6, 0.92, 1), new THREE.Color(0.62, 0.55, 1), new THREE.Color(1, 0.5, 0.24)] },
+  uWordScale: { value: 1 },
+  uPhoneScale: { value: 1 },
+  uPhoneOffset: { value: new THREE.Vector3(1.75, 0, 0) },
+  uYaw: { value: 0 },
+  uGlobalAlpha: { value: 1 },
+  uPlanetY: { value: PLANET_Y },
+};
+
+const material = new THREE.ShaderMaterial({
+  uniforms, transparent: true, depthWrite: false, depthTest: true, blending: THREE.AdditiveBlending,
+  vertexShader: /* glsl */ `
+    uniform float uTime, uPixelRatio, uSize, uMix, uWordScale, uPhoneScale, uYaw, uGlobalAlpha, uPlanetY;
+    uniform int uFrom, uTo;
+    uniform float uBright[5];
+    uniform vec3 uTint[5];
+    uniform vec3 uPhoneOffset;
+    attribute vec3 aP0; attribute vec3 aP1; attribute vec3 aP2; attribute vec3 aP3; attribute vec3 aP4;
+    attribute float aRand; attribute vec3 aColor;
+    varying float vAlpha; varying vec3 vColor;
+
+    vec3 rotY(vec3 p, float a) { float c = cos(a), s = sin(a); return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z); }
+
+    vec3 form(int i) {
+      if (i == 0) return rotY(aP0 * uWordScale, uYaw);
+      if (i == 1) return rotY(aP1, uTime * 0.04) + vec3(0.0, uPlanetY, 0.0);
+      if (i == 2) return rotY(aP2, uTime * 0.3);
+      if (i == 3) { vec3 p = aP3; p.y += sin(p.x * 1.1 + uTime * 1.4 + p.z * 0.7) * 0.2 + cos(p.z * 1.6 - uTime * 0.9) * 0.08; return p; }
+      return aP4 * uPhoneScale + uPhoneOffset;
+    }
+
+    void main() {
+      float t = smoothstep(0.0, 1.0, clamp((uMix - aRand * 0.3) / 0.7, 0.0, 1.0));
+      vec3 p = mix(form(uFrom), form(uTo), t);
+      float sw = 4.0 * t * (1.0 - t);
+      p += vec3(sin(p.y * 1.7 + uTime * 1.3 + aRand * 6.2831), cos(p.x * 1.3 + uTime * 0.9 + aRand * 3.1), sin(p.z * 1.9 + uTime * 1.1 + aRand * 2.0)) * sw * 0.6;
+      p += vec3(sin(uTime * 0.6 + aRand * 9.0), cos(uTime * 0.45 + aRand * 7.0), sin(uTime * 0.5 + aRand * 5.0)) * 0.012;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      gl_PointSize = uSize * uPixelRatio * (0.55 + aRand * 0.9) * (10.0 / -mv.z);
+      float bright = mix(uBright[uFrom], uBright[uTo], t);
+      vec3 tint = mix(uTint[uFrom], uTint[uTo], t);
+      float twinkle = 0.7 + 0.3 * sin(uTime * 2.2 + aRand * 40.0);
+      vAlpha = uGlobalAlpha * bright * twinkle * (0.45 + 0.55 * aRand) * (1.0 + sw * 0.6);
+      vColor = aColor * tint;
+    }`,
+  fragmentShader: /* glsl */ `
+    precision highp float;
+    varying float vAlpha; varying vec3 vColor;
+    void main() {
+      vec2 c = gl_PointCoord - 0.5;
+      float d = length(c);
+      if (d > 0.5) discard;
+      float a = smoothstep(0.5, 0.05, d);
+      float core = smoothstep(0.22, 0.0, d) * 0.7;
+      gl_FragColor = vec4(vColor * (1.0 + core), a * vAlpha);
     }`,
 });
-const grid = new THREE.Mesh(new THREE.PlaneGeometry(26, 26, 1, 1), gridMat);
-grid.rotation.x = -Math.PI / 2;
-grid.position.set(0, -1.05, -1.5);
-root.add(grid);
+const points = new THREE.Points(geo, material);
+points.frustumCulled = false;
+scene.add(points);
 
-/* ---------- Particle field ---------- */
-const particleCount = isMobile ? 450 : 1300;
-const positions = new Float32Array(particleCount * 3);
-const colors = new Float32Array(particleCount * 3);
-const cA = new THREE.Color(0x7c5cff), cB = new THREE.Color(0x45e3ff), cW = new THREE.Color(0xffffff);
-for (let i = 0; i < particleCount; i++) {
-  const r = 3.2 + Math.random() * 5;
-  const theta = Math.random() * Math.PI * 2;
-  const phi = Math.acos(2 * Math.random() - 1);
-  positions[i * 3] = r * Math.sin(phi) * Math.cos(theta) * 1.3;
-  positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
-  positions[i * 3 + 2] = r * Math.cos(phi) * 0.6 - 1.5;
-  const t = Math.random();
-  const c = t < 0.33 ? cA : t < 0.66 ? cB : cW;
-  colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-}
-const pGeo = new THREE.BufferGeometry();
-pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({
-  size: 0.026, vertexColors: true, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
-}));
-scene.add(particles);
-
-/* ---------- The wordmark: HYAICO extruded from the logo path ---------- */
-const word = new THREE.Group();
-root.add(word);
-const letters = [];
-const WORD_W = 5.6; // world units
-const chromeMat = new THREE.MeshPhysicalMaterial({
-  color: 0xf1f1fb, metalness: 1, roughness: 0.14,
-  iridescence: 0.3, iridescenceIOR: 1.4, iridescenceThicknessRange: [120, 500],
-  clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.9,
-});
-let introRequested = reduced;
-let lettersReady = false;
-
+/* ---------- The wordmark form (from the real logo) ---------- */
+let wordReady = false;
 new SVGLoader().load('assets/HyaicoWhite.svg', (data) => {
   const s = WORD_W / 619;
-  const depth = 20; // svg units, before scaling
+  const front = [], solid = [];
   data.paths.forEach((path) => {
     SVGLoader.createShapes(path).forEach((shape) => {
-      const geo = new THREE.ExtrudeGeometry(shape, {
-        depth, bevelEnabled: true, bevelThickness: 2.4, bevelSize: 2, bevelSegments: 5, curveSegments: 14,
-      });
-      geo.translate(-309.5, -50.3, -depth / 2);
-      geo.scale(s, s, s);
-      geo.computeBoundingBox();
-      const cx = (geo.boundingBox.min.x + geo.boundingBox.max.x) / 2;
-      geo.translate(-cx, 0, 0);
-      const mesh = new THREE.Mesh(geo, chromeMat);
-      mesh.rotation.x = Math.PI; // the SVG y axis points down
-      mesh.userData.home = new THREE.Vector3(cx, 0, 0);
-      mesh.position.copy(mesh.userData.home);
-      word.add(mesh);
-      letters.push(mesh);
+      const flat = new THREE.ShapeGeometry(shape, 10);
+      flat.translate(-309.5, -50.3, 0); flat.scale(s, -s, 1); flat.translate(0, 0, 0.05);
+      front.push(new THREE.Mesh(flat));
+      const ext = new THREE.ExtrudeGeometry(shape, { depth: 14, bevelEnabled: false, curveSegments: 10 });
+      ext.translate(-309.5, -50.3, -7); ext.scale(s, -s, s);
+      solid.push(new THREE.Mesh(ext));
     });
   });
-  letters.sort((a, b) => a.userData.home.x - b.userData.home.x);
-  lettersReady = true;
-  if (introRequested) runIntro(); else scatter();
-}, undefined, () => { /* without the logo the scene still shows the core */ });
+  // sample fronts by area and the solid letters for depth
+  const frontGeo = mergeMeshes(front), solidGeo = mergeMeshes(solid);
+  const pts = samplePoints([new THREE.Mesh(frontGeo), new THREE.Mesh(solidGeo)], [0.7, 0.3]);
+  geo.setAttribute('aP0', new THREE.BufferAttribute(pts, 3));
+  wordReady = true;
+  window.dispatchEvent(new CustomEvent('scene:wordmark'));
+}, undefined, () => { wordReady = true; window.dispatchEvent(new CustomEvent('scene:wordmark')); });
 
-function scatter() {
-  letters.forEach((m, i) => {
-    m.position.set(m.userData.home.x + (i % 2 ? 1 : -1) * (0.6 + i * 0.25), -2.2 - i * 0.3, 2.5 + i * 0.4);
-    m.rotation.set(Math.PI + 1.2, -0.8 + i * 0.3, 0.4);
-    m.scale.setScalar(0.6);
-  });
+function mergeMeshes(meshes) {
+  // concatenate non-indexed position buffers
+  const parts = meshes.map((m) => (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry));
+  const total = parts.reduce((s, g) => s + g.attributes.position.count, 0);
+  const pos = new Float32Array(total * 3);
+  let off = 0;
+  parts.forEach((g) => { pos.set(g.attributes.position.array, off); off += g.attributes.position.array.length; });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  return g;
 }
 
-function runIntro() {
-  if (!lettersReady) return;
-  const g = window.gsap;
-  if (reduced || !g) {
-    letters.forEach((m) => { m.position.copy(m.userData.home); m.rotation.set(Math.PI, 0, 0); m.scale.setScalar(1); });
-    return;
+/* ---------- The phone ---------- */
+const IMG = { w: 1320, h: 2868, left: 68, right: 1253, top: 169, bottom: 2738, bodyL: 24, bodyR: 1297, bodyT: 120, bodyB: 2787, bodyRadius: 234 };
+function roundedRect(w, h, r) {
+  const s = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
+  s.lineTo(x + w, y + h - r); s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2, false);
+  s.lineTo(x + r, y + h); s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false);
+  s.lineTo(x, y + r); s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
+  return s;
+}
+function mapUVs(g, w, h, u0, u1, v0, v1) {
+  const uv = g.attributes.uv;
+  for (let i = 0; i < uv.count; i++) {
+    const x = uv.getX(i) / w + 0.5, y = uv.getY(i) / h + 0.5;
+    uv.setXY(i, u0 + x * (u1 - u0), v0 + y * (v1 - v0));
   }
-  scatter();
-  letters.forEach((m, i) => {
-    g.to(m.position, { x: m.userData.home.x, y: 0, z: 0, duration: 1.7, delay: 0.1 + i * 0.09, ease: 'expo.out' });
-    g.to(m.rotation, { x: Math.PI, y: 0, z: 0, duration: 1.7, delay: 0.1 + i * 0.09, ease: 'expo.out' });
-    g.to(m.scale, { x: 1, y: 1, z: 1, duration: 1.4, delay: 0.1 + i * 0.09, ease: 'expo.out' });
+  uv.needsUpdate = true;
+}
+const phone = new THREE.Group();
+phone.visible = false;
+scene.add(phone);
+const px = 1 / (IMG.bodyR - IMG.bodyL);
+const bodyW = 1, bodyH = (IMG.bodyB - IMG.bodyT) * px, bodyR = IMG.bodyRadius * px, depth = 0.082;
+const screenW = (IMG.right - IMG.left) * px, screenH = (IMG.bottom - IMG.top) * px, screenR = bodyR - (IMG.left - IMG.bodyL) * px;
+const PHONE_SCALE = PHONE_H / bodyH;
+{
+  const bandMat = new THREE.MeshPhysicalMaterial({ color: 0x55555a, metalness: 1, roughness: 0.34, clearcoat: 0.35, clearcoatRoughness: 0.25, envMapIntensity: 1.3 });
+  const bodyGeo = new THREE.ExtrudeGeometry(roundedRect(bodyW, bodyH, bodyR), { depth: depth - 0.024, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 5, curveSegments: 28 });
+  bodyGeo.center();
+  const body = new THREE.Mesh(bodyGeo, bandMat);
+  phone.add(body);
+  const faceShape = roundedRect(bodyW - 0.01, bodyH - 0.01, bodyR - 0.005);
+  const bezel = new THREE.Mesh(new THREE.ShapeGeometry(faceShape, 28), new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.55, metalness: 0.1 }));
+  bezel.position.z = depth / 2 + 0.0005;
+  phone.add(bezel);
+  const back = new THREE.Mesh(new THREE.ShapeGeometry(faceShape, 28), new THREE.MeshPhysicalMaterial({ color: 0x15151a, roughness: 0.28, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08 }));
+  back.rotation.y = Math.PI; back.position.z = -depth / 2 - 0.0005;
+  phone.add(back);
+  const buttonMat = new THREE.MeshPhysicalMaterial({ color: 0x6a6a70, metalness: 1, roughness: 0.3, envMapIntensity: 1.3 });
+  [[bodyW / 2 + 0.004, 0.34, 0.24], [-bodyW / 2 - 0.004, 0.62, 0.08], [-bodyW / 2 - 0.004, 0.42, 0.16], [-bodyW / 2 - 0.004, 0.22, 0.16]].forEach(([x, y, h]) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.014, h, depth * 0.5), buttonMat);
+    b.position.set(x, y, 0); phone.add(b);
+  });
+  const camGroup = new THREE.Group();
+  camGroup.position.set(0.25, 0.68, -depth / 2); camGroup.rotation.y = Math.PI;
+  camGroup.add(new THREE.Mesh(new THREE.ExtrudeGeometry(roundedRect(0.4, 0.4, 0.1), { depth: 0.028, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 3, curveSegments: 20 }), bandMat));
+  const lensMat = new THREE.MeshPhysicalMaterial({ color: 0x0a0a10, roughness: 0.1, metalness: 0.4, clearcoat: 1, clearcoatRoughness: 0.03 });
+  const innerMat = new THREE.MeshPhysicalMaterial({ color: 0x1c2b4a, roughness: 0.05, metalness: 0.6, clearcoat: 1, iridescence: 0.6 });
+  [[-0.1, 0.1], [-0.1, -0.1], [0.1, 0]].forEach(([x, y]) => {
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 40), buttonMat); ring.rotation.x = Math.PI / 2; ring.position.set(x, y, 0.04);
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.012, 40), lensMat); lens.rotation.x = Math.PI / 2; lens.position.set(x, y, 0.056);
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.006, 32), innerMat); inner.rotation.x = Math.PI / 2; inner.position.set(x, y, 0.064);
+    camGroup.add(ring, lens, inner);
+  });
+  phone.add(camGroup);
+
+  // particle form of the phone: its body surface, in the phone's scaled local space
+  const sampleBody = new THREE.Mesh(bodyGeo);
+  sampleBody.scale.setScalar(PHONE_SCALE);
+  sampleBody.updateMatrixWorld();
+  geo.setAttribute('aP4', new THREE.BufferAttribute(samplePoints([sampleBody], [1]), 3));
+
+  // screen with the real app UI
+  new THREE.TextureLoader().load('assets/MainHero.png', (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const screenGeo = new THREE.ShapeGeometry(roundedRect(screenW, screenH, screenR), 28);
+    mapUVs(screenGeo, screenW, screenH, IMG.left / IMG.w, IMG.right / IMG.w, 1 - IMG.bottom / IMG.h, 1 - IMG.top / IMG.h);
+    // unlit so the UI keeps its true colours; a thin clearcoat layer on top gives the glass reflection
+    const screen = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tex, color: 0xe6e6e6, toneMapped: false }));
+    screen.position.z = depth / 2 + 0.0012;
+    const glass = new THREE.Mesh(screenGeo.clone(), new THREE.MeshPhysicalMaterial({
+      color: 0xffffff, transparent: true, opacity: 0.06, roughness: 0.08, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.9, depthWrite: false,
+    }));
+    glass.position.z = depth / 2 + 0.0024;
+    phone.add(screen, glass);
   });
 }
-window.addEventListener('scene:intro', () => { introRequested = true; runIntro(); }, { once: true });
+
+/* ---------- Lights for the phone ---------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(3, 5, 6); scene.add(key);
+const warm = new THREE.PointLight(0xff6a2a, 50, 24, 1.6); warm.position.set(-1, -3, 4); scene.add(warm);
+const rim = new THREE.PointLight(0xffd9c2, 30, 20, 1.6); rim.position.set(3, 3, -3); scene.add(rim);
 
 /* ---------- Post-processing ---------- */
 let composer = null;
-function buildComposer() {
-  const size = renderer.getSize(new THREE.Vector2());
+if (!coarse) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  composer.addPass(new UnrealBloomPass(size, 0.32, 0.55, 0.92));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.3, 0.6, 0.9));
   composer.addPass(new OutputPass());
 }
 
-/* ---------- Layout / resize ----------
-   Landscape: wordmark across the upper area above the headline.
-   Portrait / phones: smaller system in the top third, copy below. */
-function stacked() { return isMobile || camera.aspect < 1.05; }
-function visibleWidth() { return 2 * Math.tan(THREE.MathUtils.degToRad(16)) * 8.2 * camera.aspect; }
-function baseScale() {
-  const fit = (visibleWidth() * (stacked() ? 0.9 : 0.78)) / WORD_W;
-  return Math.min(stacked() ? 0.5 : 1, fit);
-}
-function baseY() { return stacked() ? 1.45 : 1.22; }
-function layout() {
-  isMobile = mobileQuery.matches;
-  root.position.set(0, baseY(), 0);
-  root.scale.setScalar(baseScale());
-  particles.position.set(0, stacked() ? 0.9 : 0.4, 0);
-}
+/* ---------- Camera keyframes per form ---------- */
+const SEQ = [[1, 2], [2, 3], [3, 0], [0, 4]];
+const CAM = [
+  { p: new THREE.Vector3(0, 0, 10), l: new THREE.Vector3(0, 0, 0) },        // wordmark
+  { p: new THREE.Vector3(0, 0.3, 10), l: new THREE.Vector3(0, -0.2, 0) },   // planet
+  { p: new THREE.Vector3(2.4, 0.9, 9.0), l: new THREE.Vector3(-1.4, 0, 0) }, // helix (sits right of the text)
+  { p: new THREE.Vector3(0, 2.6, 8.4), l: new THREE.Vector3(0, -0.9, -1.5) }, // field
+  { p: new THREE.Vector3(0, 0, 10), l: new THREE.Vector3(0, 0, 0) },        // phone
+];
 
+/* ---------- Layout ---------- */
+let stacked = false;
+function visibleWidth() { return 2 * Math.tan(THREE.MathUtils.degToRad(16)) * 10 * camera.aspect; }
+function layout() {
+  stacked = camera.aspect < 1.05;
+  const vw = visibleWidth();
+  CAM[2].l.x = stacked ? 0 : -1.4;
+  const storyWordScale = Math.min(1, (vw * (stacked ? 0.88 : 0.66)) / WORD_W);
+  HY.storyWordScale = storyWordScale;
+  if (!HY.introDone) {
+    // match the loader's DOM logo so the hand-over is seamless
+    const mark = document.getElementById('loaderMark');
+    const frac = mark ? mark.getBoundingClientRect().width / window.innerWidth : 0.46;
+    uniforms.uWordScale.value = Math.max(0.2, (frac * vw) / WORD_W);
+  } else uniforms.uWordScale.value = storyWordScale;
+  uniforms.uPhoneScale.value = stacked ? 0.78 : (camera.aspect < 1.5 ? 0.92 : 1);
+  uniforms.uPhoneOffset.value.set(stacked ? 0 : (camera.aspect < 1.5 ? 1.35 : 1.75), stacked ? 0.55 : -0.05, 0);
+  uniforms.uSize.value = (coarse ? 2.1 : 1.55) * (stacked ? 0.9 : 1);
+}
 function resize() {
-  const w = canvas.clientWidth || window.innerWidth;
-  const h = canvas.clientHeight || window.innerHeight;
-  const dpr = Math.min(window.devicePixelRatio || 1, lowQuality ? 1.25 : 2);
+  const w = window.innerWidth, h = window.innerHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
   renderer.setPixelRatio(dpr);
   renderer.setSize(w, h, false);
+  uniforms.uPixelRatio.value = dpr;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   if (composer) composer.setSize(w, h);
@@ -257,105 +389,91 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
-if (!lowQuality) buildComposer();
 
-/* ---------- Interaction state ---------- */
+/* ---------- Intro hand-over: wordmark → planet ---------- */
+const intro = { mix: 0 };
+HY.introDone = false;
+function startIntro() {
+  const g = window.gsap;
+  if (reduced || !g) { intro.mix = 1; HY.introDone = true; layout(); return; }
+  g.to(intro, { mix: 1, duration: 2.2, ease: 'power3.inOut', onComplete() { HY.introDone = true; layout(); } });
+}
+window.addEventListener('scene:intro', startIntro, { once: true });
+
+/* ---------- Story: which forms to blend ---------- */
+const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+let smooth = 0;
+let phoneIn = 0; // 0..1 once the phone appears
+
+function applyState(dt) {
+  smooth += (HY.progress - smooth) * (1 - Math.pow(0.002, dt));
+  let from, to, mix;
+  if (!HY.introDone) { from = 0; to = 1; mix = intro.mix; }
+  else {
+    const s = Math.min(3, Math.floor(smooth * 4));
+    const f = smooth * 4 - s;
+    from = SEQ[s][0]; to = SEQ[s][1];
+    mix = THREE.MathUtils.smoothstep(f, 0, 0.62);
+  }
+  uniforms.uFrom.value = from; uniforms.uTo.value = to; uniforms.uMix.value = mix;
+  const e = THREE.MathUtils.smoothstep(mix, 0, 1);
+  camPos.lerpVectors(CAM[from].p, CAM[to].p, e);
+  camLook.lerpVectors(CAM[from].l, CAM[to].l, e);
+
+  // the phone materialises inside its particle silhouette near the end
+  const target = THREE.MathUtils.smoothstep(smooth, 0.88, 0.97);
+  phoneIn += (target - phoneIn) * (1 - Math.pow(0.001, dt));
+  phone.visible = phoneIn > 0.002;
+  const sc = PHONE_SCALE * uniforms.uPhoneScale.value * (0.72 + 0.28 * phoneIn);
+  phone.scale.setScalar(sc);
+  phone.position.copy(uniforms.uPhoneOffset.value);
+  uniforms.uBright.value[4] = 0.8 - 0.55 * phoneIn;
+  uniforms.uGlobalAlpha.value = 1;
+  return { phoneIn };
+}
+
+/* ---------- Pointer ---------- */
 const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
 window.addEventListener('pointermove', (e) => {
   pointer.tx = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.ty = -((e.clientY / window.innerHeight) * 2 - 1);
 }, { passive: true });
 
-let scrollP = 0;
-function readScroll() { scrollP = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight || 1))); }
-window.addEventListener('scroll', readScroll, { passive: true });
-readScroll();
-
 /* ---------- Visibility gating ---------- */
-let inView = true;
-if ('IntersectionObserver' in window) {
-  new IntersectionObserver((entries) => { inView = entries[0].isIntersecting; }, { threshold: 0 }).observe(canvas);
-}
 let pageVisible = !document.hidden;
 document.addEventListener('visibilitychange', () => { pageVisible = !document.hidden; });
 
-/* ---------- Adaptive quality + FPS telemetry ---------- */
-const frameTimes = [];
-let qualityChecked = lowQuality;
-let fpsAccum = 0, fpsFrames = 0;
-function sampleFrame(dt) {
-  fpsAccum += dt; fpsFrames++;
-  if (fpsAccum >= 0.5) {
-    window.dispatchEvent(new CustomEvent('scene:stats', { detail: { fps: Math.round(fpsFrames / fpsAccum) } }));
-    fpsAccum = 0; fpsFrames = 0;
-  }
-  if (qualityChecked) return;
-  if (dt > 0 && dt < 0.5) frameTimes.push(dt);
-  if (frameTimes.length >= 90) {
-    const avg = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-    qualityChecked = true;
-    if (avg > 0.028) { lowQuality = true; composer = null; resize(); }
-  }
-}
-
 /* ---------- Render loop ---------- */
 const clock = new THREE.Clock();
-const satPos = new THREE.Vector3();
-let ready = false;
-let elapsed = 0;
-
+let elapsed = 0, ready = false;
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.1);
-  if (!pageVisible || !inView) return;
+  if (!pageVisible) return;
   elapsed += dt;
-  sampleFrame(dt);
-
   const ease = 1 - Math.pow(0.001, dt);
   pointer.x += (pointer.tx - pointer.x) * ease * 0.6;
   pointer.y += (pointer.ty - pointer.y) * ease * 0.6;
 
-  /* Wordmark: gentle tilt, pointer parallax, scroll tip-away */
-  word.rotation.y = pointer.x * 0.28 + Math.sin(elapsed * 0.35) * 0.05;
-  word.rotation.x = -0.1 + pointer.y * -0.16 - scrollP * 0.9;
-  word.position.y = Math.sin(elapsed * 0.8) * 0.04;
-  letters.forEach((m, i) => { if (introRequested && lettersReady) m.position.y = m.position.y * 0.0 + Math.sin(elapsed * 1.1 + i * 0.7) * 0.025 + (m.userData.settleY || 0); });
+  uniforms.uTime.value = elapsed;
+  uniforms.uYaw.value = pointer.x * 0.22;
+  const { phoneIn } = applyState(dt);
 
-  /* Light sweep travelling along the chrome */
-  sweep.position.x = Math.sin(elapsed * 0.45) * 4.2;
-  sweep.position.y = 1.4 + Math.cos(elapsed * 0.3) * 0.5;
+  camera.position.set(camPos.x + pointer.x * 0.35, camPos.y + pointer.y * 0.25, camPos.z);
+  camera.lookAt(camLook);
 
-  /* Core system */
-  orb.rotation.y = -elapsed * 0.08;
-  shell.rotation.y = elapsed * 0.06;
-  shell.rotation.x = Math.sin(elapsed * 0.2) * 0.3;
-  ringA.rotation.z += dt * 0.12;
-  ringB.rotation.z -= dt * 0.09;
-  ringA.rotation.x = 1.3 + pointer.y * 0.2;
-  ringB.rotation.x = -1.1 + pointer.y * 0.15;
-  satellites.forEach((m) => {
-    const a = elapsed * m.userData.speed + m.userData.phase;
-    satPos.set(Math.cos(a) * m.userData.radius, Math.sin(a) * m.userData.radius, 0);
-    satPos.applyEuler(m.userData.ring.rotation);
-    m.position.copy(satPos);
-  });
-  gridMat.uniforms.uTime.value = elapsed;
-  particles.rotation.y = elapsed * 0.025 + pointer.x * 0.06;
-  particles.rotation.x = pointer.y * 0.04;
-
-  root.rotation.y = pointer.x * 0.06;
-  root.rotation.x = pointer.y * -0.04;
-  root.position.y = baseY() + scrollP * 2.4;
-  root.scale.setScalar(baseScale() * (1 - scrollP * 0.25));
-  camera.position.x = pointer.x * 0.2;
-  camera.position.y = pointer.y * 0.14 - scrollP * 0.6;
-  camera.lookAt(0, 0.1, 0);
+  if (phone.visible) {
+    phone.rotation.y = (1 - phoneIn) * -1.1 + pointer.x * 0.28 + Math.sin(elapsed * 0.6) * 0.05;
+    phone.rotation.x = pointer.y * -0.18 + Math.sin(elapsed * 0.8) * 0.025;
+    phone.rotation.z = -0.03 + pointer.x * 0.03;
+    phone.position.y = uniforms.uPhoneOffset.value.y + Math.sin(elapsed * 0.9) * 0.05;
+  }
 
   if (composer) composer.render(); else renderer.render(scene, camera);
 
   if (!ready) {
     ready = true;
-    canvas.classList.add('is-ready');
+    html.classList.add('gl-ready');
     window.dispatchEvent(new CustomEvent('scene:ready'));
   }
 }
