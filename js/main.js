@@ -1,7 +1,7 @@
 /* ==========================================================================
    HYAICO — Interactions
    Loader → particle hand-over, smooth scroll, the pinned scroll story
-   (text beats, scene rail, scene label), outro, cursor, nav.
+   (text beats), outro, cursor, nav.
    ========================================================================== */
 (() => {
   'use strict';
@@ -14,8 +14,9 @@
   const hasScramble = hasGsap && typeof ScrambleTextPlugin !== 'undefined';
   const body = document.body;
   const html = document.documentElement;
-  const HY = (window.HY = window.HY || { progress: 0 });
+  const HY = (window.HY = window.HY || { progress: 0, outro: 0 });
   const CHARS = '01<>/\\|=+-_#*';
+  const STORY_LEN = '+=900%';
 
   if (hasST) gsap.registerPlugin(ScrollTrigger);
   if (hasSplit) gsap.registerPlugin(SplitText);
@@ -84,21 +85,22 @@
   } else {
     body.classList.add('hero-intro');
     const mark = document.getElementById('loaderMark');
-    const beam = loader.querySelector('.loader__beam');
     const line = loader.querySelector('.loader__line span');
+    const head = loader.querySelector('.loader__line i');
     const count = loader.querySelector('[data-loader-count]');
     const state = { n: 0 };
 
+    const logo = loader.querySelector('.loader__logo');
+    gsap.set(logo, { '--reveal': '-18%' });
     const boot = gsap.timeline();
-    boot.fromTo(mark, { clipPath: 'inset(-20% 100% -20% 0)' }, { clipPath: 'inset(-20% 0% -20% 0)', duration: 1.4, ease: 'power3.inOut' }, 0.15)
-      .fromTo(beam, { left: '0%', opacity: 1 }, { left: '100%', duration: 1.4, ease: 'power3.inOut' }, 0.15)
-      .to(beam, { opacity: 0, duration: 0.25 }, 1.5)
-      .fromTo(mark, { filter: 'drop-shadow(0 0 0px rgba(69,227,255,0))' }, { filter: 'drop-shadow(0 0 28px rgba(69,227,255,0.55))', duration: 1.0, ease: 'power2.out' }, 1.4)
-      .to('.loader__meta', { opacity: 1, duration: 0.5 }, 0.3)
+    boot.to(logo, { '--reveal': '118%', duration: 1.7, ease: 'power3.inOut' }, 0.15)
+      .to('.loader__streak', { opacity: 0, duration: 0.35 }, 1.75)
+      .fromTo('.loader__glow', { opacity: 0 }, { opacity: 0.75, duration: 0.9, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.6)
+      .to('.loader__meta', { opacity: 1, duration: 0.5 }, 0.35)
       .to(state, {
-        n: 100, duration: 2.1, ease: 'power2.inOut',
-        onUpdate() { count.textContent = String(Math.round(state.n)); line.style.transform = `scaleX(${state.n / 100})`; },
-      }, 0.2);
+        n: 100, duration: 2.5, ease: 'power2.inOut',
+        onUpdate() { count.textContent = String(Math.round(state.n)); line.style.transform = `scaleX(${state.n / 100})`; head.style.left = `${state.n}%`; },
+      }, 0.25);
 
     const loaded = new Promise((r) => (document.readyState === 'complete' ? r() : window.addEventListener('load', r, { once: true })));
     const fonts = document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve();
@@ -111,12 +113,15 @@
     body.classList.remove('is-loading');
     const mark = document.getElementById('loaderMark');
     const tl = gsap.timeline();
-    tl.to('.loader__meta', { opacity: 0, duration: 0.35, ease: 'power2.in' }, 0)
-      .to(loader, { backgroundColor: 'rgba(6,6,10,0)', duration: 1.0, ease: 'power2.inOut' }, 0.1)
-      .to(mark, { opacity: 0, filter: 'drop-shadow(0 0 0px rgba(69,227,255,0))', duration: 0.7, ease: 'power2.in' }, 0.55)
-      .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 1.05)
+    tl.to('.loader__meta', { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0)
+      .to('.loader__veil', { opacity: 0, duration: 1.0, ease: 'power2.inOut' }, 0.05)           // the particle wordmark glows through
+      .to('.loader__glow', { opacity: 1, duration: 0.5, ease: 'power2.in' }, 0.5)
+      .to('.loader__flash', { opacity: 1, duration: 0.12, ease: 'power1.in' }, 0.95)
+      .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 1.0)
+      .to([mark, '.loader__glow'], { opacity: 0, scale: 1.06, duration: 0.5, ease: 'power2.out' }, 1.0)
+      .to('.loader__flash', { opacity: 0, duration: 0.9, ease: 'power2.out' }, 1.07)
       .add(heroIntro(), 1.9)
-      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.4);
+      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.6);
   }
 
   function heroIntro() {
@@ -128,7 +133,7 @@
     } else tl.from(title, { opacity: 0, y: 40, duration: 1.2 }, 0.1);
     tl.to(heroText.querySelector('.eyebrow'), { opacity: 1, duration: 0.6 }, 0)
       .add(scramble(heroText.querySelector('[data-scramble]'), 1.0) || gsap.to({}, { duration: 0 }), 0)
-      .to([scrollCue, '#rail', '.scene-label'], { opacity: 1, duration: 1, stagger: 0.1 }, 0.9)
+      .to(scrollCue, { opacity: 1, duration: 1 }, 1.0)
       .call(() => body.classList.remove('hero-intro'));
     return tl;
   }
@@ -136,63 +141,52 @@
   /* ------------------------------------------------------------------
      The scroll story
   ------------------------------------------------------------------ */
-  const LABELS = ['01 // ORIGIN', '02 // STRUCTURE', '03 // FLOW', '04 // HYAICO', '05 // JUST COOKED'];
-  const rail = document.querySelectorAll('#rail i');
-  const sceneLabel = document.getElementById('sceneLabel');
-  let sceneIdx = 0;
-  function updateHud(p) {
-    const idx = Math.round(p * 4);
-    if (idx !== sceneIdx) {
-      sceneIdx = idx;
-      rail.forEach((d, i) => d.classList.toggle('is-active', i === idx));
-      scramble(sceneLabel, 0.7, LABELS[idx]);
-    }
-    if (scrollCue) scrollCue.style.opacity = p > 0.03 ? '0' : '';
-  }
-  rail.forEach((d, i) => { d.classList.toggle('is-active', i === 0); d.addEventListener('click', () => scrollToScene(i)); });
-  function scrollToScene(i) {
-    const story = document.getElementById('story');
-    const st = ScrollTrigger.getById('story');
-    if (!st) return;
-    const y = st.start + (st.end - st.start) * (i / 4);
-    if (lenis) lenis.scrollTo(y, { duration: 1.6 }); else window.scrollTo({ top: y, behavior: 'smooth' });
-  }
-
   let storyInit = false;
   function initStory() {
     if (storyInit || !hasST) return;
     storyInit = true;
 
-    const mid = document.getElementById('midText');
+    const helix = document.getElementById('helixText');
+    const galaxy = document.getElementById('galaxyText');
     const jc = document.getElementById('jcText');
-    const blurIn = { opacity: 0, y: 48, filter: 'blur(12px)' };
-    const clear = { opacity: 1, y: 0, filter: 'blur(0px)' };
+    const hidden = { opacity: 0, y: 48, filter: 'blur(12px)' };
+    const shown = { opacity: 1, y: 0, filter: 'blur(0px)' };
+    const gone = { opacity: 0, y: -50, filter: 'blur(12px)' };
 
     const tl = gsap.timeline({
       scrollTrigger: {
-        id: 'story', trigger: '#story', start: 'top top', end: '+=720%', pin: true, scrub: 0.9, anticipatePin: 1,
-        onUpdate: (self) => { HY.progress = self.progress; updateHud(self.progress); },
+        id: 'story', trigger: '#story', start: 'top top', end: STORY_LEN, pin: true, scrub: 0.9, anticipatePin: 1,
+        onUpdate: (self) => {
+          HY.progress = self.progress;
+          if (scrollCue) scrollCue.style.opacity = self.progress > 0.02 ? '0' : '';
+          if (self.progress > 0.76 && !jc.dataset.scrambled) { jc.dataset.scrambled = '1'; scramble(jc.querySelector('[data-scramble]'), 0.9); }
+        },
       },
     });
-    tl.to(heroText, { opacity: 0, y: -70, filter: 'blur(12px)', duration: 0.08, ease: 'power2.in' }, 0.005)
-      .fromTo(mid, blurIn, { ...clear, duration: 0.06, ease: 'power2.out' }, 0.15)
-      .to(mid, { opacity: 0, y: -50, filter: 'blur(12px)', duration: 0.06, ease: 'power2.in' }, 0.27)
-      .fromTo(jc, blurIn, { ...clear, duration: 0.07, ease: 'power2.out' }, 0.905)
-      .to({}, { duration: 0.025 });
+    /* durations are fractions of the pinned scroll */
+    tl.to(heroText, { ...gone, duration: 0.07, ease: 'power2.in' }, 0.004)
+      .fromTo(helix, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, 0.13)
+      .to(helix, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.27)
+      .fromTo(galaxy, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, 0.34)
+      .to(galaxy, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.48)
+      .fromTo(jc, hidden, { ...shown, duration: 0.06, ease: 'power2.out' }, 0.77)
+      .to({}, { duration: 0.17 });
 
     /* Progress bar */
     const progress = document.querySelector('.progress span');
     ScrollTrigger.create({ start: 0, end: () => ScrollTrigger.maxScroll(window), onUpdate: (s) => { progress.style.transform = `scaleX(${s.progress})`; } });
 
-    /* Outro */
+    /* Outro: the stage dims and the phone slips away as the ending arrives */
+    ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 35%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
     const wm = document.getElementById('footerWordmark');
-    if (wm) gsap.fromTo(wm, { yPercent: 40, opacity: 0.4 }, { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top bottom', end: 'bottom bottom', scrub: true } });
-    document.querySelectorAll('[data-reveal]').forEach((el) => {
-      gsap.fromTo(el, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 85%', once: true }, onStart: () => el.classList.add('is-revealed') });
+    if (wm) gsap.fromTo(wm, { yPercent: 30, opacity: 0.3 }, { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top bottom', end: 'bottom bottom', scrub: true } });
+    document.querySelectorAll('[data-reveal]').forEach((el, i) => {
+      gsap.fromTo(el, { opacity: 0, y: 40 }, {
+        opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.08,
+        scrollTrigger: { trigger: '#outro', start: 'top 60%', once: true },
+        onStart: () => { el.classList.add('is-revealed'); el.querySelectorAll('[data-scramble]').forEach((s) => scramble(s, 0.9)); },
+      });
     });
-
-    /* Scramble the "Introducing" label when it appears */
-    ScrollTrigger.create({ trigger: '#story', start: 'top top', end: '+=720%', onUpdate: (s) => { if (s.progress > 0.9 && !jc.dataset.scrambled) { jc.dataset.scrambled = '1'; scramble(jc.querySelector('[data-scramble]'), 0.9); } } });
 
     ScrollTrigger.refresh();
   }

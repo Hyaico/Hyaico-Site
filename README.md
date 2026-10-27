@@ -4,16 +4,16 @@ A single-page, almost wordless, scroll-driven 3D experience for HYAICO. Built wi
 
 ## The experience
 
-1. **Loader** — the HYAICO wordmark is revealed by a passing beam of light, with a thin progress line. It dissolves into a particle version of the same wordmark already formed behind it.
+1. **Loader** — the HYAICO wordmark is revealed by a passing light, pulses, then the dark veil lifts to show the same wordmark already formed from particles behind it. A flash and a particle burst hand over to the page.
 2. **The story** — one particle system (90,000 points on desktop, 36,000 on phones) morphs between forms as you scroll, with camera moves and swirl scrubbed by the scroll position:
    - a glowing planet horizon beneath "Built for *what's next*."
    - a double helix beside "Things that *should exist*."
-   - a flowing data field
+   - a spiral galaxy under "Ideas, *in motion*."
    - HYAICO itself, in particles
-   - the silhouette of a handset, into which a modelled 3D phone running Just Cooked appears ("Introducing Just Cooked", with a link to justcooked.app)
-3. **Outro** — the giant masked HYAICO wordmark with a light sweep, and a minimal bar.
+   - a halo of light around a modelled 3D phone running Just Cooked ("Introducing Just Cooked"), whose screen cross-fades through the app's Home, Next Meal and Recipe screens as you keep scrolling
+3. **Ending** — the phone slips away and the stage dims into a call to action: "Start with *Just Cooked*." with App Store, Google Play and justcooked.app links, then the giant masked HYAICO wordmark with a light sweep.
 
-A scene rail (right) and scene label (bottom) track the five forms; the rail is clickable.
+Every particle has its own parallax depth, so the field never moves as one block under the pointer. A single scroll cue sits bottom-centre and disappears once you move.
 
 ## Tech
 
@@ -39,16 +39,18 @@ python -m http.server 8765
 ## File structure
 
 ```
-├── index.html             # The single page: loader, nav, pinned story, outro
+├── index.html             # The single page: loader, nav, pinned story, ending
 ├── styles.css             # Design tokens, components, responsive rules
 ├── js/
-│   ├── scene.js           # The particle system, the five forms, the phone, camera keyframes
-│   └── main.js            # Loader hand-over, smooth scroll, scroll story, HUD, cursor
+│   ├── scene.js           # Particle system, the five forms, the phone + screens, camera keyframes
+│   └── main.js            # Loader hand-over, smooth scroll, scroll story, ending, cursor
 ├── assets/
 │   ├── HyaicoWhite.svg    # Wordmark — used in the UI, the loader and as the particle source
 │   ├── HyaicoBlack.svg    # Wordmark (dark on light)
 │   ├── Icon.svg           # Just Cooked app icon
-│   ├── MainHero.png       # Just Cooked mockup; the screen area is cropped onto the 3D phone
+│   ├── screens/           # Screen-only crops shown on the 3D phone (from the Just Cooked site)
+│   ├── shots/home-980.webp # Framed phone shot used when WebGL is unavailable
+│   ├── MainHero.png       # Just Cooked mockup (source material)
 │   ├── favicon.svg        # "H" monogram favicon
 │   ├── og.png             # Social preview card (1200×630)
 │   └── og-source.html     # Source for og.png — render at 1200×630 to regenerate
@@ -58,10 +60,10 @@ python -m http.server 8765
 
 ## Editing
 
-- The three text beats live in `index.html` inside `#story`; their timing is in `initStory()` in `js/main.js` (positions are fractions of the pinned scroll).
-- The forms, their brightness and tints are at the top of `js/scene.js` (`uBright`, `uTint`); camera keyframes are in `CAM`.
-- To update the phone's screen, replace `assets/MainHero.png` with a mockup of the same layout, or adjust the `IMG` crop values in `js/scene.js`.
+- The text beats live in `index.html` inside `#story`; their timing is in `initStory()` in `js/main.js` (positions are fractions of the pinned scroll, which is `STORY_LEN` long).
+- Where each form is held, and which screen the phone shows when, is in `BEATS` and `applyState()` in `js/scene.js`; brightness and tint per form are in `uBright` / `uTint`; camera keyframes in `CAM`.
+- The phone geometry follows the Just Cooked site's `js/scene.js`; to update its screens, drop new screen-only crops into `assets/screens/` with the same names.
 
 ## Browser support
 
-Latest Chrome, Edge, Firefox and Safari on desktop and mobile. Without WebGL the page shows the text beats over a static glow; without JavaScript it is readable with no animation.
+Latest Chrome, Edge, Firefox and Safari on desktop and mobile. Without WebGL the page shows the text beats over a static glow and a framed phone shot; without JavaScript it is readable with no animation.
