@@ -1,8 +1,8 @@
 /* ==========================================================================
    HYAICO — Interactions
-   The loader (a laser-scanned chrome wordmark over a drifting starfield),
-   the hand-over, smooth scroll, the pinned scroll story with typed titles,
-   the ending, cursor, nav.
+   The loader (a laser-scanned chrome wordmark over the hero's deep space),
+   the hand-over into the nav, smooth scroll, the pinned scroll story with
+   typed titles, the ending, cursor, nav.
    ========================================================================== */
 (() => {
   'use strict';
@@ -21,9 +21,10 @@
   if (!hasST) html.classList.add('no-anim');
 
   /* ------------------------------------------------------------------
-     Typewriter: a title's characters appear one by one behind a caret
+     Typewriter: a title's characters fade in one by one at a constant pace while the caret glides along with them;
+     then it blinks softly — a few times, or for good on the closing line
   ------------------------------------------------------------------ */
-  function makeTyper(el) {
+  function makeTyper(el, opts = {}) {
     if (!el || !hasGsap || reduced) return null;
     el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
     const chars = [];
@@ -44,43 +45,96 @@
         } else if (n.nodeType === 1) wrap(n);
       });
     })(el);
+    /* gradient words: a background clipped to the text paints every letter at once, whatever the letters' own opacity,
+       so each letter takes its own colour from the gradient instead (sampled along the line) and fades by itself */
+    const hosts = new Map();
+    chars.forEach((c) => {
+      const host = c.parentElement;
+      if (host === el || hosts.has(host)) { if (hosts.has(host)) hosts.get(host).push(c); return; }
+      const cs = getComputedStyle(host);
+      if (/text/.test(cs.webkitBackgroundClip || cs.backgroundClip || '') && cs.backgroundImage.includes('gradient')) {
+        hosts.set(host, [c]);
+        host.dataset.gradient = cs.backgroundImage;
+        host.style.background = 'none';
+      }
+    });
+    let tinted = false;
+    function tint() {
+      hosts.forEach((list, host) => {
+        const stops = [];
+        const re = /rgba?\(([^)]+)\)\s*([\d.]+)%/g;
+        let m;
+        while ((m = re.exec(host.dataset.gradient))) stops.push({ c: m[1].split(',').map(Number), p: Number(m[2]) / 100 });
+        if (stops.length < 2) return;
+        const widths = list.map((c) => c.getBoundingClientRect().width);
+        const total = widths.reduce((a, b) => a + b, 0) || 1;
+        let acc = 0;
+        list.forEach((c, i) => {
+          const t = (acc + widths[i] / 2) / total;
+          acc += widths[i];
+          let j = 0;
+          while (j < stops.length - 2 && t > stops[j + 1].p) j++;
+          const a = stops[j], b = stops[j + 1], k = Math.min(1, Math.max(0, (t - a.p) / (b.p - a.p || 1)));
+          c.style.color = `rgb(${[0, 1, 2].map((q) => Math.round(a.c[q] + (b.c[q] - a.c[q]) * k)).join(', ')})`;
+        });
+      });
+    }
+    tint();
     const caret = document.createElement('span');
     caret.className = 'caret'; caret.setAttribute('aria-hidden', 'true');
     el.appendChild(caret);
-    let shown = chars.length, tween = null;
-    function setShown(n) {
-      for (let i = Math.min(n, shown); i < Math.max(n, shown); i++) chars[i].style.visibility = i < n ? 'visible' : 'hidden';
-      shown = n;
+    let tween = null, later = null, spots = [];
+    const hideAll = () => chars.forEach((c) => { c.style.opacity = '0'; });
+    /* where every character sits, measured once per run, so the caret can glide between them without touching layout */
+    function measure() {
+      const t = el.getBoundingClientRect();
+      spots = chars.map((c) => { const r = c.getBoundingClientRect(); return { l: r.left - t.left, r: r.right - t.left, top: r.top - t.top, h: r.height }; });
     }
-    function place(n) {
-      const ref = chars[Math.max(0, n - 1)];
-      if (!ref) return;
-      const r = ref.getBoundingClientRect(), t = el.getBoundingClientRect();
-      const x = (n > 0 ? r.right : r.left) - t.left;
-      caret.style.transform = `translate(${x}px, ${r.top - t.top + r.height * 0.14}px)`;
-      caret.style.height = `${r.height * 0.74}px`;
+    function caretAt(n) {
+      if (!spots.length) return;
+      const k = Math.floor(n), f = n - k;
+      let x, s;
+      if (k >= spots.length) { s = spots[spots.length - 1]; x = s.r; }
+      else {
+        s = spots[k];
+        const prev = spots[k - 1];
+        /* within a line the caret slides from the last character's edge to the next one's; on a new line it starts afresh */
+        x = prev && Math.abs(s.top - prev.top) < s.h * 0.5 ? prev.r + (s.r - prev.r) * f : s.l + (s.r - s.l) * f;
+      }
+      caret.style.transform = `translate(${x.toFixed(1)}px, ${(s.top + s.h * 0.14).toFixed(1)}px)`;
+      caret.style.height = `${(s.h * 0.74).toFixed(1)}px`;
     }
-    setShown(0);
+    hideAll();
     return {
       length: chars.length,
       play(delay = 0, onDone) {
         if (tween) tween.kill();
-        setShown(0); place(0);
+        if (later) later.kill();
+        if (!tinted) { tinted = true; tint(); }
+        hideAll(); measure(); caretAt(0);
         caret.className = 'caret is-on is-typing';
         const st = { n: 0 };
+        let shown = 0;
         tween = gsap.to(st, {
           n: chars.length, duration: chars.length * TYPE_SPEED, delay, ease: 'none',
-          onUpdate: () => { const n = Math.floor(st.n); if (n !== shown) { setShown(n); place(n); } },
+          onUpdate: () => {
+            const k = Math.floor(st.n);
+            for (; shown < Math.min(k, chars.length); shown++) chars[shown].style.opacity = '1';
+            if (k < chars.length) chars[k].style.opacity = (st.n - k).toFixed(3);
+            caretAt(st.n);
+          },
           onComplete: () => {
-            setShown(chars.length); place(chars.length);
+            chars.forEach((c) => { c.style.opacity = '1'; });
+            caretAt(chars.length);
             caret.className = 'caret is-on';
-            tween = gsap.delayedCall(2.2, () => { caret.className = 'caret'; });
+            /* two soft blinks, ending fully lit, then it fades away — unless it is meant to stay */
+            if (!opts.keepCaret) later = gsap.delayedCall(2.2, () => { caret.className = 'caret is-gone'; });
             if (onDone) onDone();
           },
         });
         return tween;
       },
-      reset() { if (tween) tween.kill(); tween = null; setShown(0); caret.className = 'caret'; },
+      reset() { if (tween) tween.kill(); if (later) later.kill(); tween = later = null; hideAll(); caret.className = 'caret'; },
     };
   }
 
@@ -127,82 +181,9 @@
   const heroTyper = makeTyper(heroText.querySelector('.title'));
 
   /* ------------------------------------------------------------------
-     The loader's sky: a deep nebula that breathes slowly, and a field of stars drifting toward us. At the hand-over
-     the stars rush past — we arrive at the Earth.
-  ------------------------------------------------------------------ */
-  function loaderSky(canvas) {
-    if (!canvas || !canvas.getContext) return null;
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const N = innerWidth < 700 ? 240 : 480;
-    const rnd = (a, b) => a + Math.random() * (b - a);
-    let w = 0, h = 0, dpr = 1, neb = null, speed = 1, raf = 0, last = performance.now(), t = 0;
-    const stars = Array.from({ length: N }, () => ({ x: rnd(-1, 1), y: rnd(-1, 1), z: rnd(0.08, 1), tw: rnd(0, 6.28), s: Math.random() }));
-    function nebula() {
-      const c = document.createElement('canvas'); c.width = Math.ceil(w * dpr); c.height = Math.ceil(h * dpr);
-      const x = c.getContext('2d'); x.scale(dpr, dpr);
-      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#03040b'); g.addColorStop(1, '#070a1c');
-      x.fillStyle = g; x.fillRect(0, 0, w, h);
-      const m = Math.max(w, h);
-      const blob = (cx, cy, r, rgb, a) => {
-        const rg = x.createRadialGradient(cx, cy, 0, cx, cy, r);
-        rg.addColorStop(0, `rgba(${rgb},${a})`); rg.addColorStop(0.45, `rgba(${rgb},${a * 0.38})`); rg.addColorStop(1, `rgba(${rgb},0)`);
-        x.fillStyle = rg; x.fillRect(0, 0, w, h);
-      };
-      blob(w * 0.18, h * 0.82, m * 0.62, '45,107,255', 0.2);
-      blob(w * 0.84, h * 0.16, m * 0.56, '124,92,255', 0.18);
-      blob(w * 0.52, h * 0.5, m * 0.3, '110,200,255', 0.06);
-      blob(w * 0.95, h * 0.95, m * 0.42, '190,80,160', 0.07);
-      const v = x.createRadialGradient(w / 2, h / 2, m * 0.22, w / 2, h / 2, m * 0.78);
-      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.6)');
-      x.fillStyle = v; x.fillRect(0, 0, w, h);
-      return c;
-    }
-    function size() {
-      dpr = Math.min(devicePixelRatio || 1, 1.5); w = innerWidth; h = innerHeight;
-      canvas.width = Math.ceil(w * dpr); canvas.height = Math.ceil(h * dpr);
-      neb = nebula();
-    }
-    function draw(now) {
-      raf = requestAnimationFrame(draw);
-      const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
-      const k = 1.05 + Math.sin(t * 0.18) * 0.02, ox = Math.sin(t * 0.11) * 14 * dpr, oy = Math.cos(t * 0.09) * 9 * dpr;
-      ctx.drawImage(neb, -canvas.width * (k - 1) / 2 + ox, -canvas.height * (k - 1) / 2 + oy, canvas.width * k, canvas.height * k);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.globalCompositeOperation = 'lighter';
-      const f = Math.max(w, h) * 0.5, cx = w / 2, cy = h / 2;
-      for (const st of stars) {
-        const pz = st.z;
-        st.z -= dt * 0.04 * speed;
-        const x = cx + (st.x / st.z) * f, y = cy + (st.y / st.z) * f;
-        if (st.z <= 0.04 || x < -30 || x > w + 30 || y < -30 || y > h + 30) { st.x = rnd(-1, 1); st.y = rnd(-1, 1); st.z = 1; continue; }
-        const near = 1 - st.z;
-        const a = Math.min(1, near * 1.5) * (0.55 + 0.45 * Math.sin(t * 2 + st.tw));
-        const r = 0.3 + near * 1.4 * (0.6 + st.s * 0.6);
-        if (speed > 2.2) {
-          ctx.strokeStyle = `rgba(222,236,255,${a})`; ctx.lineWidth = r * 1.2;
-          ctx.beginPath(); ctx.moveTo(cx + (st.x / pz) * f, cy + (st.y / pz) * f); ctx.lineTo(x, y); ctx.stroke();
-        } else {
-          ctx.fillStyle = `rgba(226,238,255,${a})`;
-          ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill();
-        }
-      }
-    }
-    size();
-    addEventListener('resize', size);
-    raf = requestAnimationFrame(draw);
-    return {
-      get speed() { return speed; }, set speed(v) { speed = v; },
-      stop() { cancelAnimationFrame(raf); removeEventListener('resize', size); },
-    };
-  }
-
-  /* ------------------------------------------------------------------
      Loader
   ------------------------------------------------------------------ */
   const loader = document.getElementById('loader');
-  let sky = null;
 
   if (!hasGsap || reduced || !loader) {
     if (loader) loader.remove();
@@ -213,21 +194,25 @@
     initStory();
   } else {
     body.classList.add('hero-intro');
-    sky = loaderSky(document.getElementById('loaderSky'));
     const logo = loader.querySelector('.loader__logo');
     const line = loader.querySelector('.loader__line span');
     const head = loader.querySelector('.loader__line i');
     const count = loader.querySelector('[data-loader-count]');
     const state = { n: 0 };
 
-    gsap.set(logo, { '--reveal': '-4%', '--shine': '140%' });
+    /* the loader shows the hero's own deep space: once the 3D scene has drawn its first frame, the veil lifts and the
+       Milky Way comes up behind the wordmark */
+    const veil = loader.querySelector('.loader__veil');
+    const lift = () => gsap.to(veil, { opacity: 0, duration: 1.6, ease: 'power2.inOut' });
+    if (html.classList.contains('gl-ready')) lift(); else window.addEventListener('scene:ready', lift, { once: true });
+
+    /* one highlight only: the laser scans the chrome wordmark into existence */
+    gsap.set(logo, { '--reveal': '-4%', '--white': 0 });
     const boot = gsap.timeline();
     boot.fromTo('.loader__inner', { opacity: 0, scale: 0.97 }, { opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' }, 0)
       .to(['.loader__beam', '.loader__flare'], { opacity: 1, duration: 0.25 }, 0.1)
       .to(logo, { '--reveal': '104%', duration: 1.6, ease: 'power2.inOut' }, 0.2)
       .to(['.loader__beam', '.loader__flare'], { opacity: 0, duration: 0.35 }, 1.7)
-      .fromTo('.loader__glow', { opacity: 0 }, { opacity: 0.7, duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.7)
-      .to(logo, { '--shine': '-40%', duration: 1.2, ease: 'power2.inOut' }, 1.8)
       .to('.loader__meta', { opacity: 1, duration: 0.5 }, 0.35)
       .to(state, {
         n: 100, duration: 2.5, ease: 'power2.inOut',
@@ -240,33 +225,41 @@
     Promise.all([boot.then(), Promise.race([Promise.all([loaded, fonts]), timeout])]).then(handOver);
   }
 
-  /* While the veil still covers everything, show the later text beats for a couple of frames so the browser paints
-     them now (the logotype, the large type, the buttons) instead of the first time they appear mid-scroll */
+  /* Show the later text beats, too faint to see, for a couple of frames so the browser paints them now (the logotype,
+     the large type, the buttons) instead of the first time they appear mid-scroll */
   function prepaint() {
     const els = ['jcText', 'helixText', 'galaxyText'].map((id) => document.getElementById(id)).filter(Boolean);
-    const typed = [...document.querySelectorAll('.story__text .ch')];
-    els.forEach((el) => { el.style.opacity = '1'; });
-    typed.forEach((c) => { c.dataset.v = c.style.visibility; c.style.visibility = 'visible'; });
+    const typed = [...document.querySelectorAll('#helixText .ch, #galaxyText .ch, #jcText .ch')];
+    els.forEach((el) => { el.style.opacity = '0.004'; });
+    typed.forEach((c) => { c.dataset.o = c.style.opacity; c.style.opacity = '1'; });
     requestAnimationFrame(() => requestAnimationFrame(() => {
       els.forEach((el) => { el.style.opacity = ''; });
-      typed.forEach((c) => { c.style.visibility = c.dataset.v; });
+      typed.forEach((c) => { c.style.opacity = c.dataset.o; });
     }));
   }
 
-  /* The hand-over: the stars rush past, the logo lifts away, the veil clears — and the Earth is already rising */
+  /* The hand-over: the same space carries on — the wordmark glides up into its place in the nav, turning from chrome
+     to white as it lands, while the Earth rises into view and the title types itself */
   function handOver() {
     body.classList.remove('is-loading');
     prepaint();
-    const mark = document.getElementById('loaderMark');
+    const logo = loader.querySelector('.loader__logo');
+    const navImg = nav.querySelector('.nav__logo img');
+    nav.style.transition = 'none';
+    nav.classList.add('is-visible');
+    void nav.offsetWidth;
+    nav.style.transition = '';
+    gsap.set(navImg, { opacity: 0 });
+    const a = logo.getBoundingClientRect(), b = navImg.getBoundingClientRect();
+    const fly = { x: b.left + b.width / 2 - (a.left + a.width / 2), y: b.top + b.height / 2 - (a.top + a.height / 2), scale: b.width / a.width };
     const tl = gsap.timeline();
-    tl.to('.loader__meta', { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0)
-      .to('.loader__glow', { opacity: 0.85, duration: 0.5, ease: 'power2.in' }, 0.1)
-      .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 0.5)
-      .to([mark, '.loader__glow'], { scale: 1.12, opacity: 0, duration: 0.9, ease: 'power3.in' }, 0.5)
-      .to(sky || {}, { speed: 7, duration: 1.2, ease: 'power2.in' }, 0.4)
-      .to(['.loader__sky', '.loader__veil'], { opacity: 0, duration: 1.1, ease: 'power2.inOut' }, 0.75)
-      .add(heroIntro(), 1.3)
-      .call(() => { if (sky) sky.stop(); loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.3);
+    tl.to('.loader__meta', { opacity: 0, duration: 0.35, ease: 'power2.in' }, 0)
+      .to('.loader__veil', { opacity: 0, duration: 0.8, ease: 'power2.inOut' }, 0)
+      .call(() => window.dispatchEvent(new CustomEvent('scene:intro')), null, 0.15)
+      .to(logo, { ...fly, duration: 1.3, ease: 'power3.inOut' }, 0.2)
+      .to(logo, { '--white': 1, duration: 0.7, ease: 'power1.in' }, 0.75)
+      .add(heroIntro(), 0.95)
+      .call(() => { gsap.set(navImg, { opacity: 1 }); loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 1.52);
   }
 
   function heroIntro() {
@@ -358,7 +351,7 @@
     const wm = document.getElementById('footerWordmark');
     if (wm) gsap.fromTo(wm, { opacity: 0 }, { opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top 45%', end: 'top 18%', scrub: true } });
     const outroLine = document.querySelector('.outro__line');
-    const outroTyper = makeTyper(outroLine);
+    const outroTyper = makeTyper(outroLine, { keepCaret: true });   /* the closing line's caret never goes */
     gsap.set(outroLine, { opacity: 1 });
     ScrollTrigger.create({
       trigger: '#outro', start: 'top 55%', once: true,

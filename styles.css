@@ -120,25 +120,22 @@ html.no-webgl .gl-fallback { display: block; background: radial-gradient(60vw 30
 /* ---------- Loader ---------- */
 .loader { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; animation: loader-failsafe 0s 8s forwards; }
 @keyframes loader-failsafe { to { visibility: hidden; pointer-events: none; } }
+/* the veil covers the page only until the 3D scene has drawn: then the loader shows the hero's own deep space */
 .loader__veil { position: absolute; inset: 0; background: #04050c; }
-/* the sky behind the logo: a slowly breathing nebula and a starfield drifting toward us (drawn in main.js) */
-.loader__sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .loader__inner { position: relative; width: min(46vw, 600px); }
-.loader__logo { position: relative; --reveal: -4%; --shine: 140%; }
-/* the wordmark in polished chrome — the same metal it becomes at the very end — scanned in by the laser; once it is
-   whole, a light sweeps across it */
+.loader__logo { position: relative; --reveal: -4%; --white: 0; will-change: transform; }
+/* the wordmark in polished chrome — the same metal it becomes at the very end — scanned in by the laser; at the
+   hand-over it turns white as it lands in the nav */
 .loader__mark {
   position: relative; width: 100%; aspect-ratio: 619 / 101;
   background:
-    linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) var(--shine) 0 / 260% 100% no-repeat,
+    linear-gradient(rgba(255, 255, 255, var(--white)), rgba(255, 255, 255, var(--white))),
     linear-gradient(180deg, #ffffff 0%, #eef2fa 34%, #9ea8bd 50%, #d9e0ec 62%, #ffffff 100%);
   -webkit-mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(90deg, #000 var(--reveal), transparent calc(var(--reveal) + 4%));
   -webkit-mask-size: 100% 100%, 100% 100%; -webkit-mask-repeat: no-repeat; -webkit-mask-composite: source-in;
   mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(90deg, #000 var(--reveal), transparent calc(var(--reveal) + 4%));
   mask-size: 100% 100%, 100% 100%; mask-repeat: no-repeat; mask-composite: intersect;
 }
-/* the glow is a blurred copy of the logo on its own layer, so no filter ever meets the mask */
-.loader__glow { position: absolute; inset: 0; width: 100%; height: auto; opacity: 0; filter: blur(16px) saturate(1.3); transform: scale(1.03); pointer-events: none; }
 /* the laser: a thin line of light that scans the wordmark into existence */
 .loader__beam {
   position: absolute; top: -60%; bottom: -60%; left: var(--reveal); width: 120px; margin-left: -60px; opacity: 0; pointer-events: none;
@@ -203,14 +200,17 @@ html.no-js body { overflow: auto; }
 .story__text .eyebrow { margin-bottom: clamp(18px, 3vh, 30px); }
 /* no text-shadow here: the line masks would clip it into a visible box */
 .title { position: relative; font-size: clamp(3rem, 9vw, 9.4rem); line-height: 0.94; letter-spacing: -0.045em; font-weight: 500; max-width: 12ch; text-wrap: balance; }
-/* the typewriter's caret: it rides along as each character appears, then blinks a few times and goes */
+/* the typewriter's caret: it glides along as the characters fade in, then blinks softly — and on the closing line it
+   keeps blinking */
 .caret {
   position: absolute; left: 0; top: 0; width: max(2px, 0.05em); height: 0.8em; margin-left: 0.04em; border-radius: 2px; pointer-events: none;
-  background: linear-gradient(180deg, #ffffff, #a9e8ff); box-shadow: 0 0 14px rgba(140, 220, 255, 0.75); opacity: 0; will-change: transform;
+  background: linear-gradient(180deg, #ffffff, #a9e8ff); box-shadow: 0 0 14px rgba(140, 220, 255, 0.75); opacity: 0; will-change: transform, opacity;
+  transition: opacity 0.45s ease;
 }
-.caret.is-on { opacity: 1; animation: caret-blink 1.05s steps(1, end) infinite; }
+.caret.is-on { opacity: 1; animation: caret-blink 1.1s ease-in-out infinite; }
 .caret.is-typing { animation: none; }
-@keyframes caret-blink { 50% { opacity: 0; } }
+.caret.is-gone { opacity: 0; }
+@keyframes caret-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.08; } }
 .title em {
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.02em; padding-right: 0.08em;
   background: linear-gradient(92deg, #fff 0%, #d2c8ff 45%, #8feaff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
