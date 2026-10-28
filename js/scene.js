@@ -382,16 +382,6 @@ function flareTexture() {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const flareTex = flareTexture();
-/* a thin horizontal glint, like light catching a lens */
-function glintTexture() {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 32;
-  const ctx = c.getContext('2d');
-  ctx.translate(128, 16); ctx.scale(1, 0.125);
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 128);
-  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.08, 'rgba(225,244,255,0.75)'); g.addColorStop(0.35, 'rgba(150,215,255,0.18)'); g.addColorStop(1, 'rgba(120,200,255,0)');
-  ctx.fillStyle = g; ctx.fillRect(-128, -128, 256, 256);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
 const WORLD_VS = 'varying vec3 vWN; varying vec3 vWP; varying vec2 vUv; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vWP = w.xyz; vWN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * w; }';
 
 /* ---------- The Earth ----------
@@ -489,18 +479,19 @@ earthTexture(EARTH_TEX.night, false, (t) => {
 
 /* ---------- The atom: three orbits around the Earth, 60° apart like the symbol ----------
    Each is tilted in depth so it passes in front of the globe on one side and behind it on the other. An orbit is a
-   crisp line of light, its colour drifting between cyan and violet, brightening into a trail behind its electron. */
+   crisp line of light, its colour drifting between cyan and violet; its electron is drawn into the line itself: a
+   white-hot point in a small halo of the orbit's colour, with a slim streak tapering away behind it along the curve. */
 const ORBIT_K = 1.42;   // orbit radius / planet radius
 const ORBIT_R = PLANET_R * ORBIT_K;
 const orbits = new THREE.Group();
 fx.add(orbits);
-const electronTex = glowTexture('rgba(255,255,255,1)', 'rgba(170,232,255,0.55)');
 const ringShared = { uCenter: { value: new THREE.Vector3() }, uToCam: { value: new THREE.Vector3(0, 0, 1) }, uRadius: { value: ORBIT_R } };
-/* each orbit is a ribbon a few pixels wide that always faces the screen — a crisp hairline in a soft glow, with a
-   light trail running behind its electron — so it reads as a sleek line of light, never a tube. Parts behind the globe
-   are hidden by it; the far half is dimmer */
-const ringRes = { value: new THREE.Vector2(1, 1) };   // the particle layer's drawing size in pixels
-const RING_SEG = 480, RING_W = 12;                    // ribbon width in pixels: a ~1.5px line inside its glow
+/* each orbit is a ribbon that always faces the screen — a crisp hairline in a soft glow — so it reads as a sleek line
+   of light, never a tube. It is measured in screen pixels: a few wide along the orbit, wider round the electron to
+   leave room for its halo. Parts behind the globe are hidden by it; the far half is dimmer */
+const ringRes = { value: new THREE.Vector2(1, 1) };   // the particle layer's drawing size in device pixels
+const ringDpr = { value: 1 };                          // device pixels per CSS pixel in that layer
+const RING_SEG = 720;
 const ringGeo = new THREE.BufferGeometry();
 {
   const ang = new Float32Array((RING_SEG + 1) * 2), side = new Float32Array((RING_SEG + 1) * 2), idx = [];
@@ -514,53 +505,65 @@ const ringGeo = new THREE.BufferGeometry();
   ringGeo.setAttribute('aSide', new THREE.BufferAttribute(side, 1));
   ringGeo.setIndex(idx);
 }
-const RING_VS = `uniform vec3 uCenter, uToCam; uniform float uRadius, uR; uniform vec2 uRes; attribute float aAng, aSide;
-  varying float vU, vX, vFront;
+const RING_VS = `uniform vec3 uCenter, uToCam; uniform float uRadius, uR, uHead, uDpr; uniform vec2 uRes; attribute float aAng, aSide;
+  varying float vU, vX, vFront, vPxPerU;
   void main(){
     vec3 p = vec3(cos(aAng) * uR, sin(aAng) * uR, 0.0), t = vec3(-sin(aAng), cos(aAng), 0.0);
     vec4 w = modelMatrix * vec4(p, 1.0);
     vec4 c0 = projectionMatrix * viewMatrix * w;
     vec4 c1 = projectionMatrix * viewMatrix * (modelMatrix * vec4(p + t * 0.02, 1.0));
-    vec2 dir = normalize((c1.xy / c1.w - c0.xy / c0.w) * uRes);
-    c0.xy += vec2(-dir.y, dir.x) * aSide * ${RING_W.toFixed(1)} / uRes * c0.w;
+    vec2 d = (c1.xy / c1.w - c0.xy / c0.w) * uRes * 0.5;        /* device pixels for a short step along the orbit */
+    float pxPerU = length(d) / 0.02 * uR * 6.2831853 / uDpr;    /* CSS pixels per full turn, here */
+    vec2 dir = normalize(d);
+    float u = aAng / 6.2831853;
+    float s = (fract(u - uHead + 0.5) - 0.5) * pxPerU;          /* CSS pixels ahead of the electron */
+    float halfW = 6.0 + 22.0 * exp(-s * s / 1800.0);              /* wider round the electron, for its halo */
+    c0.xy += vec2(-dir.y, dir.x) * aSide * halfW * uDpr * 2.0 / uRes * c0.w;
     gl_Position = c0;
-    vU = aAng / 6.2831853; vX = aSide * ${(RING_W / 2).toFixed(1)};
+    vU = u; vX = aSide * halfW; vPxPerU = pxPerU;
     vFront = dot(w.xyz - uCenter, uToCam) / uRadius;
   }`;
-const RING_FS = `uniform float uHead, uOpacity, uTime, uSeed; uniform vec3 uColor, uColor2; varying float vU, vX, vFront;
+const RING_FS = `uniform float uHead, uOpacity, uTime, uSeed; uniform vec3 uColor, uColor2; varying float vU, vX, vFront, vPxPerU;
   void main(){
-    float trail = exp(-fract(uHead - vU) * 4.6);
     float depth = mix(0.22, 1.0, smoothstep(-0.45, 0.45, vFront));
     float x = abs(vX);
-    float line = 1.0 - smoothstep(0.45, 1.25, x);
-    float glow = exp(-x * x / 7.0);
+    float behind = fract(uHead - vU);                            /* how far behind the electron, as a part of a turn */
+    float s = (fract(vU - uHead + 0.5) - 0.5) * vPxPerU;        /* CSS pixels ahead (+) of the electron */
+    /* the orbit brightens gently behind the electron, and close behind it a slim streak tapers into it */
+    float trail = exp(-behind * 5.0);
+    float streak = pow(max(1.0 - behind * vPxPerU / 170.0, 0.0), 2.6) * smoothstep(1.5, -1.0, s);
+    float halfLine = 0.55 + 1.15 * streak;
+    float line = 1.0 - smoothstep(halfLine - 0.45, halfLine + 0.75, x);
+    float glow = exp(-x * x / (7.0 + 26.0 * streak));
+    /* the electron: a white-hot point in a small halo of the orbit's colour */
+    float r2 = s * s + x * x;
+    float core = exp(-r2 / 3.0);
+    float halo = exp(-r2 / 36.0) * 0.5 + exp(-r2 / 240.0) * 0.14;
     vec3 col = mix(uColor, uColor2, 0.5 + 0.5 * sin(vU * 6.2831853 + uTime * 0.35 + uSeed));
-    col = mix(col, vec3(1.0), trail * 0.55);
-    gl_FragColor = vec4(col, (line * (0.2 + 0.95 * trail) + glow * (0.04 + 0.32 * trail)) * depth * uOpacity);
+    vec3 c = mix(col, mix(col, vec3(1.0), 0.7), streak) * (line * (0.17 + 0.3 * trail + 0.95 * streak) + glow * (0.035 + 0.1 * trail + 0.3 * streak))
+           + mix(col, vec3(1.0), 0.45) * halo + vec3(1.0) * core * 1.35;
+    gl_FragColor = vec4(c * depth * uOpacity, 1.0);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
   }`;
 const RING_SPECS = [
   { phi: 0, lean: 63, color: 0x7fe3ff, color2: 0xa996ff, speed: 0.62, phase: 0.6, seed: 0.0 },   // sweeps across the face
   { phi: 60, lean: -63, color: 0xa996ff, color2: 0x7fe3ff, speed: 0.74, phase: 2.6, seed: 2.1 },  // loops over the right shoulder
   { phi: 120, lean: 63, color: 0x7fe3ff, color2: 0xc4b6ff, speed: 0.68, phase: 4.4, seed: 4.2 },  // loops over the left shoulder
 ];
-const glintTex = glintTexture();
 const rings = RING_SPECS.map((spec) => {
   const ring = new THREE.Group();
   const shared = { uHead: { value: 0 }, uOpacity: { value: 0 }, uColor: { value: new THREE.Color(spec.color) }, uColor2: { value: new THREE.Color(spec.color2) }, uTime: uniforms.uTime, uSeed: { value: spec.seed }, ...ringShared };
+  /* light only: it adds colour and never coverage, so the backgrounds behind the canvas still show through */
   const line = new THREE.Mesh(ringGeo, new THREE.ShaderMaterial({
-    uniforms: { ...shared, uR: { value: ORBIT_R }, uRes: ringRes }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: { ...shared, uR: { value: ORBIT_R }, uRes: ringRes, uDpr: ringDpr }, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor,
     vertexShader: RING_VS, fragmentShader: RING_FS,
   }));
   line.frustumCulled = false;
   ring.add(line);
-  /* the electron: a bright point in a tight halo, with a thin horizontal glint */
-  const electron = new THREE.Sprite(new THREE.SpriteMaterial({ map: electronTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-  electron.scale.setScalar(0.3);
-  const spark = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-  spark.scale.set(1.4, 0.12, 1);
-  ring.add(electron, spark);
   orbits.add(ring);
-  return { ring, spec, shared, electron, spark, speed: spec.speed, phase: spec.phase };
+  return { ring, spec, shared, speed: spec.speed, phase: spec.phase };
 });
 /* orient the orbits for the view the hero is seen from: the line where each orbit crosses from front to back lies in
    the picture plane at angle phi, and the orbit leans out of that plane by `lean` */
@@ -581,7 +584,6 @@ function orientRings(eye, center) {
     ring.quaternion.setFromRotationMatrix(_m4.makeBasis(_a, _b, _n));
   });
 }
-const _e = new THREE.Vector3();
 
 /* ---------- The helix: two twisted ribbons of light and tapered base pairs, all in blues ----------
    It grows in from the bottom as the particles arrive, and dissolves the same way. The far side is dimmer. */
@@ -1376,7 +1378,7 @@ if (!coarse) {
 const warmRT = new THREE.WebGLRenderTarget(4, 4);   // stands in for the sea's reflection target (same kind of target)
 function warmUp() {
   needsWarm = false;
-  [electronTex, core.material.map, flareTex, glintTex, ...nebulae.map((s) => s.material.map)].forEach(upload);
+  [core.material.map, flareTex, ...nebulae.map((s) => s.material.map)].forEach(upload);
   const prev = renderer.getRenderTarget();
   const jobs = [];
   try {
@@ -1493,6 +1495,7 @@ function resize() {
   glareMat.uniforms.uAspect.value = camera.aspect;
   const fxScale = composer ? 1 : dpr;   /* the particle layer renders at 1x with bloom, at the device ratio without */
   ringRes.value.set(w * fxScale, h * fxScale);
+  ringDpr.value = fxScale;
   spaceMat.uniforms.uPx.value = (2 * T16) / (h * fxScale);
   layout();
 }
@@ -1754,8 +1757,6 @@ function frame() {
   rings.forEach((r) => {
     const a = elapsed * r.speed + r.phase;
     r.shared.uHead.value = (a / (Math.PI * 2)) % 1;
-    r.electron.position.set(Math.cos(a) * ORBIT_R, Math.sin(a) * ORBIT_R, 0);
-    r.spark.position.copy(r.electron.position);
   });
   /* the clouds and the Milky Way are painted, and every shader compiled, on the first frames — while the loader is still up */
   if (bandDirty) paintBand();
@@ -1778,15 +1779,6 @@ function frame() {
   ringShared.uToCam.value.subVectors(camera.position, ringShared.uCenter.value).normalize();
   dnaShared.uCenter.value.copy(dnaRig.position);
   dnaShared.uToCam.value.subVectors(camera.position, dnaRig.position).normalize();
-  if (orbits.visible) {
-    rings.forEach((r) => {
-      r.electron.getWorldPosition(_e);
-      const f = _e.sub(ringShared.uCenter.value).dot(ringShared.uToCam.value) / ringShared.uRadius.value;
-      const o = ringsIn * (0.2 + 0.8 * ss(f, -0.4, 0.4));
-      r.electron.material.opacity = o;
-      r.spark.material.opacity = o * 0.7;
-    });
-  }
 
   /* the galaxy's light on its way to becoming the sun: a curve on screen from the galaxy's centre to the sun's place,
      drawn a fixed distance in front of the camera so its size on screen stays steady */
