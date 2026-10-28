@@ -11,24 +11,15 @@
   const hasGsap = typeof gsap !== 'undefined';
   const hasST = hasGsap && typeof ScrollTrigger !== 'undefined';
   const hasSplit = hasGsap && typeof SplitText !== 'undefined';
-  const hasScramble = hasGsap && typeof ScrambleTextPlugin !== 'undefined';
   const body = document.body;
   const html = document.documentElement;
   const HY = (window.HY = window.HY || { progress: 0, outro: 0 });
-  const CHARS = '01<>/\\|=+-_#*';
   const STORY_LEN = '+=900%';
 
   if (hasST) gsap.registerPlugin(ScrollTrigger);
   if (hasSplit) gsap.registerPlugin(SplitText);
-  if (hasScramble) gsap.registerPlugin(ScrambleTextPlugin);
   if (!hasST) html.classList.add('no-anim');
 
-  function scramble(el, duration = 0.9, text) {
-    if (!el || !hasScramble || reduced) { if (el && text) el.textContent = text; return null; }
-    const final = text || el.dataset.text || el.textContent;
-    el.dataset.text = final;
-    return gsap.to(el, { duration, scrambleText: { text: final, chars: CHARS, speed: 0.5, revealDelay: duration * 0.2 } });
-  }
   function splitLines(title) {
     if (!title || !hasSplit || reduced) return null;
     try { return new SplitText(title, { type: 'lines', mask: 'lines', linesClass: 'line' }).lines; } catch (err) { return null; }
@@ -123,9 +114,18 @@
   }
 
   /* The hand-over: the logo lifts away, the veil clears, the globe is already rising behind it */
+  /* While the veil still covers everything, show the later text beats for a couple of frames so the browser paints
+     them now (the logotype, the large type, the buttons) instead of the first time they appear mid-scroll */
+  function prepaint() {
+    const els = ['jcText', 'helixText', 'galaxyText'].map((id) => document.getElementById(id)).filter(Boolean);
+    els.forEach((el) => { el.style.opacity = '1'; });
+    requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => { el.style.opacity = ''; })));
+  }
+
   function handOver() {
     body.classList.remove('is-loading');
     prepareHero();
+    prepaint();
     const mark = document.getElementById('loaderMark');
     const tl = gsap.timeline();
     tl.to('.loader__meta', { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0)
@@ -157,9 +157,10 @@
     const helix = document.getElementById('helixText');
     const galaxy = document.getElementById('galaxyText');
     const jc = document.getElementById('jcText');
-    const hidden = { opacity: 0, y: 48, filter: 'blur(12px)' };
-    const shown = { opacity: 1, y: 0, filter: 'blur(0px)' };
-    const gone = { opacity: 0, y: -50, filter: 'blur(12px)' };
+    /* scroll-scrubbed motion uses only opacity and movement — the two things the compositor animates for free */
+    const hidden = { opacity: 0, y: 48 };
+    const shown = { opacity: 1, y: 0 };
+    const gone = { opacity: 0, y: -50 };
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -171,7 +172,7 @@
       },
     });
     /* positions and durations are fractions of the pinned scroll */
-    tl.to(heroText, { ...gone, duration: 0.07, ease: 'power2.in' }, 0.004);
+    tl.to(heroText.querySelector('.title'), { ...gone, duration: 0.07, ease: 'power2.in' }, 0.004);
 
     /* a titled beat: its lines rise out of their masks, hold, then leave upward */
     function beat(el, enter, leave) {
@@ -182,8 +183,11 @@
           .to(lines, { yPercent: -115, duration: 0.04, stagger: 0.01, ease: 'power2.in' }, leave)
           .to(el, { opacity: 0, duration: 0.012, ease: 'none' }, leave + 0.04);
       } else {
-        tl.fromTo(el, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, enter)
-          .to(el, { ...gone, duration: 0.05, ease: 'power2.in' }, leave);
+        const title = el.querySelector('.title');
+        tl.set(el, { opacity: 1 }, enter)
+          .fromTo(title, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, enter)
+          .to(title, { ...gone, duration: 0.05, ease: 'power2.in' }, leave)
+          .set(el, { opacity: 0 }, leave + 0.05);
       }
     }
     beat(helix, 0.13, 0.27);
@@ -192,8 +196,9 @@
     /* Just Cooked: the block builds up piece by piece beside the phone */
     const jcKids = jc.querySelectorAll('.jc > *');
     tl.fromTo(jc, { opacity: 0 }, { opacity: 1, duration: 0.008, ease: 'none' }, 0.55)
-      .fromTo(jcKids, { opacity: 0, y: 36, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.035, stagger: 0.006, ease: 'power3.out' }, 0.555)
-      .to(jc, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.7)
+      .fromTo(jcKids, { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.035, stagger: 0.006, ease: 'power3.out' }, 0.555)
+      .to(jc.querySelector('.jc'), { y: -50, duration: 0.05, ease: 'power2.in' }, 0.7)
+      .to(jc, { opacity: 0, duration: 0.05, ease: 'power2.in' }, 0.7)
       .to({}, { duration: 0.25 });
 
     /* Progress bar */
@@ -208,7 +213,7 @@
       gsap.fromTo(el, { opacity: 0, y: 40 }, {
         opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.12,
         scrollTrigger: { trigger: '#outro', start: 'top 55%', once: true },
-        onStart: () => { el.classList.add('is-revealed'); el.querySelectorAll('[data-scramble]').forEach((s) => scramble(s, 0.9)); },
+        onStart: () => { el.classList.add('is-revealed'); },
       });
     });
 
