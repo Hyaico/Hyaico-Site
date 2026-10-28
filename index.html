@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>HYAICO — Built for what's next</title>
-  <meta name="description" content="HYAICO. Built for what's next. Makers of Just Cooked.">
+  <title>HYAICO — Building what's next</title>
+  <meta name="description" content="HYAICO. Building what's next. Makers of Just Cooked.">
   <meta name="theme-color" content="#06060a">
   <meta name="color-scheme" content="dark">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="HYAICO — Built for what's next">
+  <meta property="og:title" content="HYAICO — Building what's next">
   <meta property="og:description" content="Makers of Just Cooked.">
   <meta property="og:image" content="assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=15">
 
   <script type="importmap">
     {
@@ -34,11 +34,12 @@
   </script>
   <script>document.documentElement.classList.replace('no-js', 'js');</script>
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" crossorigin>
-  <link rel="modulepreload" href="js/scene.js?v=13">
+  <link rel="modulepreload" href="js/scene.js?v=15">
 </head>
 <body class="is-loading">
 
-  <div class="bg-glow" aria-hidden="true"></div>
+  <!-- each scene has its own background, cross-faded with the story -->
+  <div class="scene-bg" aria-hidden="true"><i data-bg="hero"></i><i data-bg="helix"></i><i data-bg="galaxy"></i><i data-bg="night"></i><i data-bg="end"></i></div>
   <div class="grain" aria-hidden="true"></div>
   <div class="progress" aria-hidden="true"><span></span></div>
 
@@ -50,12 +51,13 @@
   <!-- ============ LOADER ============ -->
   <div class="loader" id="loader" aria-hidden="true">
     <div class="loader__veil"></div>
-    <div class="loader__veil loader__veil--glow"></div>
+    <canvas class="loader__sky" id="loaderSky"></canvas>
     <div class="loader__inner">
       <div class="loader__logo">
         <img src="assets/HyaicoWhite.svg" alt="" class="loader__glow" aria-hidden="true" width="619" height="101">
-        <img src="assets/HyaicoWhite.svg" alt="" class="loader__mark" id="loaderMark" width="619" height="101">
+        <div class="loader__mark" id="loaderMark"></div>
         <i class="loader__beam"></i>
+        <i class="loader__flare"></i>
       </div>
       <div class="loader__meta">
         <span class="loader__line"><span></span><i></i></span>
@@ -83,15 +85,15 @@
       <div class="story__pin">
 
         <div class="story__text story__text--hero" id="heroText">
-          <h1 class="title">Built for <em>what's next.</em></h1>
+          <h1 class="title">Building <em>what's next.</em></h1>
         </div>
 
         <div class="story__text story__text--helix" id="helixText">
-          <h2 class="title title--md">Things that <em>should exist.</em></h2>
+          <h2 class="title title--md">Stretching <em>what can be done.</em></h2>
         </div>
 
         <div class="story__text story__text--galaxy" id="galaxyText">
-          <h2 class="title title--md">Ideas, <em>in motion.</em></h2>
+          <h2 class="title title--md">And if it's done, <em>it can be better.</em></h2>
         </div>
 
         <div class="story__text story__text--jc" id="jcText">
@@ -123,13 +125,12 @@
     <section class="outro" id="outro">
       <div class="outro__inner">
         <div class="outro__center">
-          <h2 class="outro__line" data-reveal>Built for <em>what's next.</em></h2>
+          <h2 class="outro__line" data-reveal>Building <em>what's next.</em></h2>
         </div>
         <div class="outro__foot">
           <div class="outro__wordmark" id="footerWordmark" aria-hidden="true"><i></i></div>
           <div class="outro__bar">
             <span>© <span id="year">2026</span> HYAICO</span>
-            <span>Just Cooked™ is a trademark of Hyaico Ltd.</span>
             <a href="#top" data-cursor="link">Back to top ↑</a>
           </div>
         </div>
@@ -139,9 +140,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/SplitText.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.1/dist/lenis.min.js"></script>
-  <script type="module" src="js/scene.js?v=13"></script>
-  <script src="js/main.js?v=13" defer></script>
+  <script type="module" src="js/scene.js?v=15"></script>
+  <script src="js/main.js?v=15" defer></script>
 </body>
 </html>

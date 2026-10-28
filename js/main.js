@@ -1,7 +1,8 @@
 /* ==========================================================================
    HYAICO — Interactions
-   Loader → clean hand-over, smooth scroll, the pinned scroll story
-   (text beats), the ending, cursor, nav.
+   The loader (a laser-scanned chrome wordmark over a drifting starfield),
+   the hand-over, smooth scroll, the pinned scroll story with typed titles,
+   the ending, cursor, nav.
    ========================================================================== */
 (() => {
   'use strict';
@@ -10,19 +11,77 @@
   const finePointer = matchMedia('(pointer: fine)').matches;
   const hasGsap = typeof gsap !== 'undefined';
   const hasST = hasGsap && typeof ScrollTrigger !== 'undefined';
-  const hasSplit = hasGsap && typeof SplitText !== 'undefined';
   const body = document.body;
   const html = document.documentElement;
   const HY = (window.HY = window.HY || { progress: 0, outro: 0 });
   const STORY_LEN = '+=900%';
+  const TYPE_SPEED = 0.045;   // seconds per character: typing always runs at this pace, whatever the scroll does
 
   if (hasST) gsap.registerPlugin(ScrollTrigger);
-  if (hasSplit) gsap.registerPlugin(SplitText);
   if (!hasST) html.classList.add('no-anim');
 
-  function splitLines(title) {
-    if (!title || !hasSplit || reduced) return null;
-    try { return new SplitText(title, { type: 'lines', mask: 'lines', linesClass: 'line' }).lines; } catch (err) { return null; }
+  /* ------------------------------------------------------------------
+     Typewriter: a title's characters appear one by one behind a caret
+  ------------------------------------------------------------------ */
+  function makeTyper(el) {
+    if (!el || !hasGsap || reduced) return null;
+    el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
+    const chars = [];
+    (function wrap(node) {
+      [...node.childNodes].forEach((n) => {
+        if (n.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          let prevSpace = false;
+          for (const ch of n.textContent) {
+            const space = /\s/.test(ch);
+            if (space && prevSpace) continue;
+            prevSpace = space;
+            const s = document.createElement('span');
+            s.className = 'ch'; s.textContent = space ? ' ' : ch; s.setAttribute('aria-hidden', 'true');
+            frag.appendChild(s); chars.push(s);
+          }
+          n.replaceWith(frag);
+        } else if (n.nodeType === 1) wrap(n);
+      });
+    })(el);
+    const caret = document.createElement('span');
+    caret.className = 'caret'; caret.setAttribute('aria-hidden', 'true');
+    el.appendChild(caret);
+    let shown = chars.length, tween = null;
+    function setShown(n) {
+      for (let i = Math.min(n, shown); i < Math.max(n, shown); i++) chars[i].style.visibility = i < n ? 'visible' : 'hidden';
+      shown = n;
+    }
+    function place(n) {
+      const ref = chars[Math.max(0, n - 1)];
+      if (!ref) return;
+      const r = ref.getBoundingClientRect(), t = el.getBoundingClientRect();
+      const x = (n > 0 ? r.right : r.left) - t.left;
+      caret.style.transform = `translate(${x}px, ${r.top - t.top + r.height * 0.14}px)`;
+      caret.style.height = `${r.height * 0.74}px`;
+    }
+    setShown(0);
+    return {
+      length: chars.length,
+      play(delay = 0, onDone) {
+        if (tween) tween.kill();
+        setShown(0); place(0);
+        caret.className = 'caret is-on is-typing';
+        const st = { n: 0 };
+        tween = gsap.to(st, {
+          n: chars.length, duration: chars.length * TYPE_SPEED, delay, ease: 'none',
+          onUpdate: () => { const n = Math.floor(st.n); if (n !== shown) { setShown(n); place(n); } },
+          onComplete: () => {
+            setShown(chars.length); place(chars.length);
+            caret.className = 'caret is-on';
+            tween = gsap.delayedCall(2.2, () => { caret.className = 'caret'; });
+            if (onDone) onDone();
+          },
+        });
+        return tween;
+      },
+      reset() { if (tween) tween.kill(); tween = null; setShown(0); caret.className = 'caret'; },
+    };
   }
 
   /* ------------------------------------------------------------------
@@ -63,22 +122,87 @@
   const year = document.getElementById('year');
   if (year) year.textContent = String(new Date().getFullYear());
 
-  /* ------------------------------------------------------------------
-     Hero headline: split once fonts are in, before anything heavy runs
-  ------------------------------------------------------------------ */
   const heroText = document.getElementById('heroText');
   const scrollCue = document.getElementById('scrollCue');
-  let heroLines = null;
-  function prepareHero() {
-    if (heroLines) return;
-    heroLines = splitLines(heroText.querySelector('.title'));
-    if (heroLines) gsap.set(heroLines, { yPercent: 115 });
+  const heroTyper = makeTyper(heroText.querySelector('.title'));
+
+  /* ------------------------------------------------------------------
+     The loader's sky: a deep nebula that breathes slowly, and a field of stars drifting toward us. At the hand-over
+     the stars rush past — we arrive at the Earth.
+  ------------------------------------------------------------------ */
+  function loaderSky(canvas) {
+    if (!canvas || !canvas.getContext) return null;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const N = innerWidth < 700 ? 240 : 480;
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    let w = 0, h = 0, dpr = 1, neb = null, speed = 1, raf = 0, last = performance.now(), t = 0;
+    const stars = Array.from({ length: N }, () => ({ x: rnd(-1, 1), y: rnd(-1, 1), z: rnd(0.08, 1), tw: rnd(0, 6.28), s: Math.random() }));
+    function nebula() {
+      const c = document.createElement('canvas'); c.width = Math.ceil(w * dpr); c.height = Math.ceil(h * dpr);
+      const x = c.getContext('2d'); x.scale(dpr, dpr);
+      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#03040b'); g.addColorStop(1, '#070a1c');
+      x.fillStyle = g; x.fillRect(0, 0, w, h);
+      const m = Math.max(w, h);
+      const blob = (cx, cy, r, rgb, a) => {
+        const rg = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+        rg.addColorStop(0, `rgba(${rgb},${a})`); rg.addColorStop(0.45, `rgba(${rgb},${a * 0.38})`); rg.addColorStop(1, `rgba(${rgb},0)`);
+        x.fillStyle = rg; x.fillRect(0, 0, w, h);
+      };
+      blob(w * 0.18, h * 0.82, m * 0.62, '45,107,255', 0.2);
+      blob(w * 0.84, h * 0.16, m * 0.56, '124,92,255', 0.18);
+      blob(w * 0.52, h * 0.5, m * 0.3, '110,200,255', 0.06);
+      blob(w * 0.95, h * 0.95, m * 0.42, '190,80,160', 0.07);
+      const v = x.createRadialGradient(w / 2, h / 2, m * 0.22, w / 2, h / 2, m * 0.78);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.6)');
+      x.fillStyle = v; x.fillRect(0, 0, w, h);
+      return c;
+    }
+    function size() {
+      dpr = Math.min(devicePixelRatio || 1, 1.5); w = innerWidth; h = innerHeight;
+      canvas.width = Math.ceil(w * dpr); canvas.height = Math.ceil(h * dpr);
+      neb = nebula();
+    }
+    function draw(now) {
+      raf = requestAnimationFrame(draw);
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      const k = 1.05 + Math.sin(t * 0.18) * 0.02, ox = Math.sin(t * 0.11) * 14 * dpr, oy = Math.cos(t * 0.09) * 9 * dpr;
+      ctx.drawImage(neb, -canvas.width * (k - 1) / 2 + ox, -canvas.height * (k - 1) / 2 + oy, canvas.width * k, canvas.height * k);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = 'lighter';
+      const f = Math.max(w, h) * 0.5, cx = w / 2, cy = h / 2;
+      for (const st of stars) {
+        const pz = st.z;
+        st.z -= dt * 0.04 * speed;
+        const x = cx + (st.x / st.z) * f, y = cy + (st.y / st.z) * f;
+        if (st.z <= 0.04 || x < -30 || x > w + 30 || y < -30 || y > h + 30) { st.x = rnd(-1, 1); st.y = rnd(-1, 1); st.z = 1; continue; }
+        const near = 1 - st.z;
+        const a = Math.min(1, near * 1.5) * (0.55 + 0.45 * Math.sin(t * 2 + st.tw));
+        const r = 0.3 + near * 1.4 * (0.6 + st.s * 0.6);
+        if (speed > 2.2) {
+          ctx.strokeStyle = `rgba(222,236,255,${a})`; ctx.lineWidth = r * 1.2;
+          ctx.beginPath(); ctx.moveTo(cx + (st.x / pz) * f, cy + (st.y / pz) * f); ctx.lineTo(x, y); ctx.stroke();
+        } else {
+          ctx.fillStyle = `rgba(226,238,255,${a})`;
+          ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill();
+        }
+      }
+    }
+    size();
+    addEventListener('resize', size);
+    raf = requestAnimationFrame(draw);
+    return {
+      get speed() { return speed; }, set speed(v) { speed = v; },
+      stop() { cancelAnimationFrame(raf); removeEventListener('resize', size); },
+    };
   }
 
   /* ------------------------------------------------------------------
      Loader
   ------------------------------------------------------------------ */
   const loader = document.getElementById('loader');
+  let sky = null;
 
   if (!hasGsap || reduced || !loader) {
     if (loader) loader.remove();
@@ -89,18 +213,21 @@
     initStory();
   } else {
     body.classList.add('hero-intro');
+    sky = loaderSky(document.getElementById('loaderSky'));
     const logo = loader.querySelector('.loader__logo');
     const line = loader.querySelector('.loader__line span');
     const head = loader.querySelector('.loader__line i');
     const count = loader.querySelector('[data-loader-count]');
     const state = { n: 0 };
 
-    gsap.set(logo, { '--reveal': '-4%' });
+    gsap.set(logo, { '--reveal': '-4%', '--shine': '140%' });
     const boot = gsap.timeline();
-    boot.to('.loader__beam', { opacity: 1, duration: 0.25 }, 0.1)
+    boot.fromTo('.loader__inner', { opacity: 0, scale: 0.97 }, { opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' }, 0)
+      .to(['.loader__beam', '.loader__flare'], { opacity: 1, duration: 0.25 }, 0.1)
       .to(logo, { '--reveal': '104%', duration: 1.6, ease: 'power2.inOut' }, 0.2)
-      .to('.loader__beam', { opacity: 0, duration: 0.3 }, 1.7)
-      .fromTo('.loader__glow', { opacity: 0 }, { opacity: 0.8, duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.7)
+      .to(['.loader__beam', '.loader__flare'], { opacity: 0, duration: 0.35 }, 1.7)
+      .fromTo('.loader__glow', { opacity: 0 }, { opacity: 0.7, duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.7)
+      .to(logo, { '--shine': '-40%', duration: 1.2, ease: 'power2.inOut' }, 1.8)
       .to('.loader__meta', { opacity: 1, duration: 0.5 }, 0.35)
       .to(state, {
         n: 100, duration: 2.5, ease: 'power2.inOut',
@@ -108,40 +235,45 @@
       }, 0.25);
 
     const loaded = new Promise((r) => (document.readyState === 'complete' ? r() : window.addEventListener('load', r, { once: true })));
-    const fonts = (document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve()).then(prepareHero);
+    const fonts = document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve();
     const timeout = new Promise((r) => setTimeout(r, 5000));
     Promise.all([boot.then(), Promise.race([Promise.all([loaded, fonts]), timeout])]).then(handOver);
   }
 
-  /* The hand-over: the logo lifts away, the veil clears, the globe is already rising behind it */
   /* While the veil still covers everything, show the later text beats for a couple of frames so the browser paints
      them now (the logotype, the large type, the buttons) instead of the first time they appear mid-scroll */
   function prepaint() {
     const els = ['jcText', 'helixText', 'galaxyText'].map((id) => document.getElementById(id)).filter(Boolean);
+    const typed = [...document.querySelectorAll('.story__text .ch')];
     els.forEach((el) => { el.style.opacity = '1'; });
-    requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => { el.style.opacity = ''; })));
+    typed.forEach((c) => { c.dataset.v = c.style.visibility; c.style.visibility = 'visible'; });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      els.forEach((el) => { el.style.opacity = ''; });
+      typed.forEach((c) => { c.style.visibility = c.dataset.v; });
+    }));
   }
 
+  /* The hand-over: the stars rush past, the logo lifts away, the veil clears — and the Earth is already rising */
   function handOver() {
     body.classList.remove('is-loading');
-    prepareHero();
     prepaint();
     const mark = document.getElementById('loaderMark');
     const tl = gsap.timeline();
     tl.to('.loader__meta', { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0)
-      .to('.loader__glow', { opacity: 0.9, duration: 0.5, ease: 'power2.in' }, 0.1)
+      .to('.loader__glow', { opacity: 0.85, duration: 0.5, ease: 'power2.in' }, 0.1)
       .call(() => { window.dispatchEvent(new CustomEvent('scene:intro')); nav.classList.add('is-visible'); }, null, 0.5)
       .to([mark, '.loader__glow'], { scale: 1.12, opacity: 0, duration: 0.9, ease: 'power3.in' }, 0.5)
-      .to('.loader__veil', { opacity: 0, duration: 1.1, ease: 'power2.inOut' }, 0.7)
+      .to(sky || {}, { speed: 7, duration: 1.2, ease: 'power2.in' }, 0.4)
+      .to(['.loader__sky', '.loader__veil'], { opacity: 0, duration: 1.1, ease: 'power2.inOut' }, 0.75)
       .add(heroIntro(), 1.3)
-      .call(() => { loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.3);
+      .call(() => { if (sky) sky.stop(); loader.remove(); if (lenis) lenis.start(); initStory(); }, null, 2.3);
   }
 
   function heroIntro() {
-    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-    if (heroLines) tl.to(heroLines, { yPercent: 0, duration: 1.4, stagger: 0.14 }, 0.1);
-    else tl.from(heroText.querySelector('.title'), { opacity: 0, y: 40, duration: 1.2 }, 0.1);
-    tl.to(scrollCue, { opacity: 1, duration: 1 }, 1.0)
+    const tl = gsap.timeline();
+    if (heroTyper) tl.call(() => heroTyper.play(), null, 0.15);
+    else tl.from(heroText.querySelector('.title'), { opacity: 0, y: 40, duration: 1.2, ease: 'power4.out' }, 0.1);
+    tl.to(scrollCue, { opacity: 1, duration: 1 }, 1.2)
       .call(() => body.classList.remove('hero-intro'));
     return tl;
   }
@@ -157,12 +289,44 @@
     const helix = document.getElementById('helixText');
     const galaxy = document.getElementById('galaxyText');
     const jc = document.getElementById('jcText');
-    /* scroll-scrubbed motion uses only opacity and movement — the two things the compositor animates for free */
-    const hidden = { opacity: 0, y: 48 };
-    const shown = { opacity: 1, y: 0 };
     const gone = { opacity: 0, y: -50 };
 
+    /* Just Cooked arrives on its own clock once the beat is reached: the panel, the logotype, the tagline typed out,
+       then the store buttons */
+    const panel = jc.querySelector('.jc');
+    const jcLogo = jc.querySelector('.jc__logo');
+    const jcTyper = makeTyper(jc.querySelector('.jc__lead'));
+    const jcRest = [jc.querySelector('.stores'), jc.querySelector('.jc__link')];
+    gsap.set([panel, jcLogo, ...jcRest], { opacity: 0 });
+    const jcIntro = {
+      play() {
+        gsap.killTweensOf([panel, jcLogo, ...jcRest]);
+        gsap.fromTo(panel, { opacity: 0, y: 30, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' });
+        gsap.fromTo(jcLogo, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.15, ease: 'power3.out' });
+        const typeAt = 0.45;
+        if (jcTyper) jcTyper.play(typeAt);
+        const after = typeAt + (jcTyper ? jcTyper.length * TYPE_SPEED : 0);
+        gsap.fromTo(jcRest, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, delay: after, ease: 'power3.out' });
+      },
+      reset() { gsap.killTweensOf([panel, jcLogo, ...jcRest]); gsap.set([panel, jcLogo, ...jcRest], { opacity: 0 }); if (jcTyper) jcTyper.reset(); },
+    };
+
+    /* each titled beat types itself out when it is reached, and leaves upward with the scroll */
+    const beats = [
+      { from: 0.13, to: 0.27, typer: makeTyper(helix.querySelector('.title')) },
+      { from: 0.34, to: 0.47, typer: makeTyper(galaxy.querySelector('.title')) },
+      { from: 0.555, to: 0.7, intro: jcIntro },
+    ];
+    function syncBeats(p) {
+      beats.forEach((b) => {
+        const inside = p >= b.from && p <= b.to + 0.055;
+        if (inside && !b.on) { b.on = true; if (b.typer) b.typer.play(); if (b.intro) b.intro.play(); }
+        else if (!inside && b.on) { b.on = false; if (b.typer) b.typer.reset(); if (b.intro) b.intro.reset(); }
+      });
+    }
+
     const tl = gsap.timeline({
+      onUpdate: () => syncBeats(tl.time()),
       scrollTrigger: {
         id: 'story', trigger: '#story', start: 'top top', end: STORY_LEN, pin: true, scrub: 0.9, anticipatePin: 1,
         onUpdate: (self) => {
@@ -171,50 +335,37 @@
         },
       },
     });
-    /* positions and durations are fractions of the pinned scroll */
+    /* positions and durations are fractions of the pinned scroll (the timeline is 1 long) */
     tl.to(heroText.querySelector('.title'), { ...gone, duration: 0.07, ease: 'power2.in' }, 0.004);
-
-    /* a titled beat: its lines rise out of their masks, hold, then leave upward */
-    function beat(el, enter, leave) {
-      const lines = splitLines(el.querySelector('.title'));
-      if (lines) {
-        tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.012, ease: 'none' }, enter)
-          .fromTo(lines, { yPercent: 115 }, { yPercent: 0, duration: 0.05, stagger: 0.014, ease: 'power3.out' }, enter)
-          .to(lines, { yPercent: -115, duration: 0.04, stagger: 0.01, ease: 'power2.in' }, leave)
-          .to(el, { opacity: 0, duration: 0.012, ease: 'none' }, leave + 0.04);
-      } else {
-        const title = el.querySelector('.title');
-        tl.set(el, { opacity: 1 }, enter)
-          .fromTo(title, hidden, { ...shown, duration: 0.05, ease: 'power2.out' }, enter)
-          .to(title, { ...gone, duration: 0.05, ease: 'power2.in' }, leave)
-          .set(el, { opacity: 0 }, leave + 0.05);
-      }
-    }
-    beat(helix, 0.13, 0.27);
-    beat(galaxy, 0.34, 0.47);
-
-    /* Just Cooked: the block builds up piece by piece beside the phone */
-    const jcKids = jc.querySelectorAll('.jc > *');
-    tl.fromTo(jc, { opacity: 0 }, { opacity: 1, duration: 0.008, ease: 'none' }, 0.55)
-      .fromTo(jcKids, { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.035, stagger: 0.006, ease: 'power3.out' }, 0.555)
-      .to(jc.querySelector('.jc'), { y: -50, duration: 0.05, ease: 'power2.in' }, 0.7)
-      .to(jc, { opacity: 0, duration: 0.05, ease: 'power2.in' }, 0.7)
+    [[helix, 0.13, 0.27], [galaxy, 0.34, 0.47]].forEach(([el, enter, leave]) => {
+      const title = el.querySelector('.title');
+      tl.set(el, { opacity: 1 }, enter)
+        .fromTo(title, { y: 30 }, { y: 0, duration: 0.05, ease: 'power2.out' }, enter)
+        .to(title, { ...gone, duration: 0.05, ease: 'power2.in' }, leave)
+        .set(el, { opacity: 0 }, leave + 0.05);
+    });
+    tl.set(jc, { opacity: 1 }, 0.55)
+      .to(jc, { ...gone, duration: 0.05, ease: 'power2.in' }, 0.7)
       .to({}, { duration: 0.25 });
 
     /* Progress bar */
     const progress = document.querySelector('.progress span');
     ScrollTrigger.create({ start: 0, end: () => ScrollTrigger.maxScroll(window), onUpdate: (s) => { progress.style.transform = `scaleX(${s.progress})`; } });
 
-    /* Ending: the chrome HYAICO glides down into the footer wordmark, which brightens as it lands */
+    /* Ending: the chrome HYAICO glides down into the footer wordmark, which brightens as it lands; the closing line
+       types itself out, then draws its underline */
     ScrollTrigger.create({ trigger: '#outro', start: 'top bottom', end: 'top 20%', scrub: true, onUpdate: (s) => { HY.outro = s.progress; } });
     const wm = document.getElementById('footerWordmark');
     if (wm) gsap.fromTo(wm, { opacity: 0 }, { opacity: 1, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top 45%', end: 'top 18%', scrub: true } });
-    document.querySelectorAll('[data-reveal]').forEach((el, i) => {
-      gsap.fromTo(el, { opacity: 0, y: 40 }, {
-        opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: i * 0.12,
-        scrollTrigger: { trigger: '#outro', start: 'top 55%', once: true },
-        onStart: () => { el.classList.add('is-revealed'); },
-      });
+    const outroLine = document.querySelector('.outro__line');
+    const outroTyper = makeTyper(outroLine);
+    gsap.set(outroLine, { opacity: 1 });
+    ScrollTrigger.create({
+      trigger: '#outro', start: 'top 55%', once: true,
+      onEnter: () => {
+        if (!outroTyper) { outroLine.classList.add('is-revealed'); return; }
+        outroTyper.play(0, () => outroLine.classList.add('is-revealed'));
+      },
     });
 
     ScrollTrigger.refresh();

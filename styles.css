@@ -46,8 +46,44 @@ h1, h2, p { margin: 0; }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 4px; }
 
 /* ---------- Ambient ---------- */
-/* the page's own black is the background everywhere; the stage paints all the colour */
-.bg-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--bg); }
+/* each scene has its own sky behind the 3D stage — deep space round the Earth, a blue glow behind the DNA, nebula
+   colour round the galaxy, the night the stars gather in, a soft light under the ending. They cross-fade with the
+   story; only their opacity ever changes, so it costs nothing to animate. */
+.scene-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--bg); }
+.scene-bg i { position: absolute; inset: 0; opacity: 0; will-change: opacity; }
+.scene-bg [data-bg="hero"] {
+  opacity: 1;
+  background:
+    radial-gradient(120% 80% at 50% 118%, rgba(56, 124, 255, 0.34) 0%, rgba(40, 90, 220, 0.13) 38%, transparent 66%),
+    radial-gradient(70% 55% at 12% -5%, rgba(124, 92, 255, 0.16), transparent 70%),
+    radial-gradient(60% 50% at 92% 8%, rgba(69, 227, 255, 0.08), transparent 70%),
+    linear-gradient(180deg, #04050c 0%, #060a1a 100%);
+}
+.scene-bg [data-bg="helix"] {
+  background:
+    radial-gradient(42% 75% at 72% 50%, rgba(46, 120, 255, 0.24), transparent 72%),
+    radial-gradient(60% 60% at 8% 92%, rgba(40, 200, 255, 0.08), transparent 70%),
+    linear-gradient(180deg, #040814 0%, #061026 100%);
+}
+.scene-bg [data-bg="galaxy"] {
+  background:
+    radial-gradient(70% 60% at 50% 42%, rgba(96, 60, 200, 0.24), transparent 72%),
+    radial-gradient(45% 40% at 88% 78%, rgba(200, 70, 150, 0.14), transparent 70%),
+    radial-gradient(50% 45% at 8% 82%, rgba(40, 100, 230, 0.16), transparent 70%),
+    linear-gradient(180deg, #05040f 0%, #0a0820 100%);
+}
+.scene-bg [data-bg="night"] {
+  background:
+    radial-gradient(60% 46% at 50% 50%, rgba(130, 150, 210, 0.14), transparent 72%),
+    radial-gradient(90% 60% at 50% 110%, rgba(61, 48, 96, 0.35), transparent 70%),
+    linear-gradient(180deg, #070b1e 0%, #05060c 100%);
+}
+.scene-bg [data-bg="end"] {
+  background:
+    radial-gradient(70% 55% at 50% 40%, rgba(124, 92, 255, 0.17), rgba(69, 227, 255, 0.05) 45%, transparent 75%),
+    radial-gradient(100% 55% at 50% 105%, rgba(34, 44, 100, 0.32), transparent 70%),
+    linear-gradient(180deg, #05060f 0%, #070816 100%);
+}
 .grain {
   position: fixed; inset: -10%; z-index: 9000; pointer-events: none; opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -84,14 +120,22 @@ html.no-webgl .gl-fallback { display: block; background: radial-gradient(60vw 30
 /* ---------- Loader ---------- */
 .loader { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; animation: loader-failsafe 0s 8s forwards; }
 @keyframes loader-failsafe { to { visibility: hidden; pointer-events: none; } }
-.loader__veil { position: absolute; inset: 0; background: var(--bg); }
-.loader__veil--glow { background: radial-gradient(60% 45% at 50% 55%, rgba(124, 92, 255, 0.1), transparent 70%); }
+.loader__veil { position: absolute; inset: 0; background: #04050c; }
+/* the sky behind the logo: a slowly breathing nebula and a starfield drifting toward us (drawn in main.js) */
+.loader__sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .loader__inner { position: relative; width: min(46vw, 600px); }
-.loader__logo { position: relative; --reveal: -4%; }
+.loader__logo { position: relative; --reveal: -4%; --shine: 140%; }
+/* the wordmark in polished chrome — the same metal it becomes at the very end — scanned in by the laser; once it is
+   whole, a light sweeps across it */
 .loader__mark {
-  position: relative; width: 100%; height: auto;
-  -webkit-mask-image: linear-gradient(90deg, #000 var(--reveal), transparent calc(var(--reveal) + 4%));
-  mask-image: linear-gradient(90deg, #000 var(--reveal), transparent calc(var(--reveal) + 4%));
+  position: relative; width: 100%; aspect-ratio: 619 / 101;
+  background:
+    linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) var(--shine) 0 / 260% 100% no-repeat,
+    linear-gradient(180deg, #ffffff 0%, #eef2fa 34%, #9ea8bd 50%, #d9e0ec 62%, #ffffff 100%);
+  -webkit-mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(90deg, #000 var(--reveal), transparent calc(var(--reveal) + 4%));
+  -webkit-mask-size: 100% 100%, 100% 100%; -webkit-mask-repeat: no-repeat; -webkit-mask-composite: source-in;
+  mask-image: url("assets/HyaicoWhite.svg"), linear-gradient(90deg, #000 var(--reveal), transparent calc(var(--reveal) + 4%));
+  mask-size: 100% 100%, 100% 100%; mask-repeat: no-repeat; mask-composite: intersect;
 }
 /* the glow is a blurred copy of the logo on its own layer, so no filter ever meets the mask */
 .loader__glow { position: absolute; inset: 0; width: 100%; height: auto; opacity: 0; filter: blur(16px) saturate(1.3); transform: scale(1.03); pointer-events: none; }
@@ -105,6 +149,12 @@ html.no-webgl .gl-fallback { display: block; background: radial-gradient(60vw 30
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
   mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
 }
+/* an anamorphic flare where the laser crosses the wordmark */
+.loader__flare {
+  position: absolute; top: 50%; left: var(--reveal); width: min(80vw, 1100px); height: 2px; transform: translate(-50%, -50%); opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(205, 228, 255, 0.4) 30%, transparent);
+}
+.loader__flare::after { content: ""; position: absolute; left: 25%; right: 25%; top: -14px; bottom: -14px; background: radial-gradient(closest-side, rgba(190, 220, 255, 0.22), transparent); }
 .loader__meta { position: absolute; left: 0; right: 0; top: 100%; margin-top: clamp(28px, 5vw, 64px); display: flex; align-items: center; gap: 18px; opacity: 0; }
 .loader__line { position: relative; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.12); }
 .loader__line span { display: block; height: 100%; background: linear-gradient(90deg, var(--violet), var(--cyan)); transform: scaleX(0); transform-origin: left; }
@@ -152,8 +202,15 @@ html.no-js body { overflow: auto; }
 .story__text--hero { opacity: 1; padding-bottom: 18vh; }   /* the line sits well above the globe */
 .story__text .eyebrow { margin-bottom: clamp(18px, 3vh, 30px); }
 /* no text-shadow here: the line masks would clip it into a visible box */
-.title { font-size: clamp(3rem, 9vw, 9.4rem); line-height: 0.94; letter-spacing: -0.045em; font-weight: 500; max-width: 12ch; text-wrap: balance; }
-.title .line { padding-bottom: 0.08em; }
+.title { position: relative; font-size: clamp(3rem, 9vw, 9.4rem); line-height: 0.94; letter-spacing: -0.045em; font-weight: 500; max-width: 12ch; text-wrap: balance; }
+/* the typewriter's caret: it rides along as each character appears, then blinks a few times and goes */
+.caret {
+  position: absolute; left: 0; top: 0; width: max(2px, 0.05em); height: 0.8em; margin-left: 0.04em; border-radius: 2px; pointer-events: none;
+  background: linear-gradient(180deg, #ffffff, #a9e8ff); box-shadow: 0 0 14px rgba(140, 220, 255, 0.75); opacity: 0; will-change: transform;
+}
+.caret.is-on { opacity: 1; animation: caret-blink 1.05s steps(1, end) infinite; }
+.caret.is-typing { animation: none; }
+@keyframes caret-blink { 50% { opacity: 0; } }
 .title em {
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.02em; padding-right: 0.08em;
   background: linear-gradient(92deg, #fff 0%, #d2c8ff 45%, #8feaff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -163,25 +220,33 @@ body.hero-intro .story__text--hero .eyebrow, body.hero-intro .scroll-cue { opaci
 
 .story__text--helix { justify-items: start; text-align: left; padding-right: 44%; }
 .story__text--galaxy { align-content: start; padding-top: clamp(96px, 16vh, 180px); }
+.story__text--galaxy .title { max-width: 18ch; font-size: clamp(2.4rem, 5.6vw, 6rem); }
 .story__text--galaxy .title em { background: linear-gradient(92deg, #fff 0%, #ffd9b8 45%, #ffb07a 100%); -webkit-background-clip: text; background-clip: text; }
 
-/* Just Cooked beat: the copy sits in from the edge, close to the phone, and builds up piece by piece */
-.story__text--jc { justify-items: start; text-align: left; align-content: center; padding-left: clamp(100px, 19vw, 300px); padding-right: 42%; }
-.jc { display: grid; justify-items: start; }
+/* Just Cooked beat: the copy sits on a pane of dark glass in from the edge, close to the phone, and arrives piece by piece */
+.story__text--jc { justify-items: start; text-align: left; align-content: center; padding-left: clamp(80px, 14vw, 240px); padding-right: 40%; }
+.jc {
+  position: relative; display: grid; justify-items: start;
+  padding: clamp(28px, 3.2vw, 46px) clamp(30px, 3.6vw, 52px) clamp(26px, 3vw, 40px);
+  border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(145deg, rgba(26, 16, 46, 0.52), rgba(26, 16, 46, 0.26));
+  box-shadow: 0 40px 100px -30px rgba(30, 10, 60, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+}
 /* everything that animates gets its own layer, so scrolling moves layers instead of re-painting them */
 .story__text .title, .jc { will-change: transform, opacity; }
 .jc > * { will-change: transform, opacity; }
 .story__text--jc { will-change: opacity; }
-/* a soft dusk shade on the copy's side of the screen, so the words always read against the bright sky */
-.story__text--jc::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(22, 12, 38, 0.56) 0%, rgba(22, 12, 38, 0.4) 30%, rgba(22, 12, 38, 0.14) 50%, transparent 62%); }
+/* a soft dusk shade on the copy's side of the screen, so the words always read against the bright sky; it reaches below
+   the copy, so it still covers the bottom edge as the copy leaves upward */
+.story__text--jc::before { content: ""; position: absolute; inset: 0 0 -64px; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(22, 12, 38, 0.3) 0%, rgba(22, 12, 38, 0.16) 34%, transparent 56%); }
 .jc__logo { margin: 0; width: min(38vw, 520px); }
 .jc__logo img { width: 100%; height: auto; filter: drop-shadow(0 6px 26px rgba(56, 16, 34, 0.42)); }
-.jc__lead { margin-top: clamp(16px, 3vh, 30px); font-size: clamp(2rem, 3.7vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 500; color: #fff; max-width: 10ch; text-wrap: balance; text-shadow: 0 2px 36px rgba(70, 25, 45, 0.55); }
-/* the italic words in Just Cooked's own burnt orange, so they hold against the bright sky */
+.jc__lead { position: relative; margin-top: clamp(16px, 3vh, 30px); font-size: clamp(2rem, 3.7vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 500; color: #fff; max-width: 10ch; text-wrap: balance; }
+/* on the dark glass the italic words glow in Just Cooked's warm orange */
 .jc__lead em {
   font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; padding-right: 0.06em;
-  background: linear-gradient(92deg, #f0612e 0%, #d8400f 55%, #b03410 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
-  text-shadow: none; filter: drop-shadow(0 0 16px rgba(56, 16, 34, 0.5));   /* a shadow behind gradient text has to be a filter, or it paints over the letters */
+  background: linear-gradient(92deg, #ffc2a0 0%, #ff8a5c 48%, #f0612e 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .stores { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: clamp(26px, 4.6vh, 42px); }
 .store {
@@ -257,18 +322,19 @@ html.no-anim [data-reveal], html.no-anim .story__text--hero .eyebrow, html.no-an
    Responsive
    ========================================================================== */
 @media (max-width: 1100px) {
-  .story__text--jc { padding-left: clamp(48px, 10vw, 140px); padding-right: 44%; }
+  .story__text--jc { padding-left: clamp(40px, 7vw, 100px); padding-right: 42%; }
 }
 @media (max-width: 860px), (max-aspect-ratio: 21/20) {
   .nav { padding-top: 12px; }
   .nav__inner { height: 54px; }
   .title { font-size: clamp(2.9rem, 12vw, 6rem); }
   .title--md { font-size: clamp(2.4rem, 10vw, 5rem); }
+  .story__text--galaxy .title { font-size: clamp(2.2rem, 9vw, 4.4rem); max-width: 14ch; }
   .story__text--helix { justify-items: center; text-align: center; padding-right: var(--gutter); align-content: start; padding-top: clamp(96px, 17vh, 180px); }
   .story__text--galaxy { padding-top: clamp(90px, 15vh, 160px); }
   .story__text--jc { padding-left: var(--gutter); padding-right: var(--gutter); justify-items: center; text-align: center; align-content: end; padding-bottom: clamp(24px, 5vh, 56px); }
   .story__text--jc::before { background: linear-gradient(to bottom, transparent 0%, transparent 50%, rgba(8, 7, 16, 0.5) 64%, rgba(8, 7, 16, 0.84) 78%, rgba(8, 7, 16, 0.92) 100%); }
-  .jc { justify-items: center; }
+  .jc { justify-items: center; padding: 20px 20px 18px; border-radius: 22px; background: linear-gradient(145deg, rgba(20, 14, 36, 0.5), rgba(20, 14, 36, 0.3)); }
   .jc__logo { width: min(64vw, 320px); }
   .jc__lead { margin-top: 8px; font-size: clamp(1.25rem, 5.4vw, 1.7rem); }
   .stores { margin-top: 18px; gap: 8px; justify-content: center; }

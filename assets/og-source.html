@@ -1,51 +1,45 @@
 <!DOCTYPE html>
-<!-- Source for assets/og.png (1200x630). Render with a headless browser at that size. -->
+<!-- Source for assets/og.png (1200x630). Render with a headless browser at that size. It mirrors the site's last frame. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>HYAICO — social card</title>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
   <style>
     html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
     body {
-      position: relative; background: #06060a; color: #f4f4f7; font-family: "Geist", system-ui, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    .glow {
-      position: absolute; inset: 0;
+      position: relative; color: #f4f4f7; font-family: "Geist", system-ui, sans-serif; -webkit-font-smoothing: antialiased;
       background:
-        radial-gradient(520px 520px at 86% 40%, rgba(124, 92, 255, 0.55), transparent 62%),
-        radial-gradient(420px 420px at 78% 60%, rgba(69, 227, 255, 0.28), transparent 60%),
-        radial-gradient(900px 500px at 10% 110%, rgba(124, 92, 255, 0.12), transparent 60%);
+        radial-gradient(70% 60% at 50% 36%, rgba(124, 92, 255, 0.2), rgba(69, 227, 255, 0.05) 45%, transparent 75%),
+        radial-gradient(100% 55% at 50% 108%, rgba(34, 44, 100, 0.4), transparent 70%),
+        linear-gradient(180deg, #05060f 0%, #070816 100%);
     }
-    .orb {
-      position: absolute; right: 90px; top: 50%; width: 360px; height: 360px; margin-top: -180px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(214,204,255,0.55) 25%, rgba(124,92,255,0.35) 60%, rgba(69,227,255,0.15) 100%);
-      box-shadow: 0 0 120px rgba(124, 92, 255, 0.55), inset 0 0 60px rgba(255,255,255,0.25);
-      display: grid; place-items: center;
+    .logo { position: absolute; left: 56px; top: 48px; height: 20px; }
+    .line {
+      position: absolute; left: 0; right: 0; top: 150px; margin: 0 auto; width: max-content; padding-bottom: 18px;
+      font-size: 104px; line-height: 0.96; letter-spacing: -0.045em; font-weight: 500;
     }
-    .orb svg { width: 150px; height: auto; fill: #f8f8ff; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.35)); }
-    .ring { position: absolute; right: 30px; top: 50%; width: 480px; height: 480px; margin-top: -240px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.45); transform: rotateX(70deg) rotateZ(-20deg); }
-    .ring.b { width: 560px; height: 560px; margin-top: -280px; right: -10px; border-color: rgba(69,227,255,0.45); transform: rotateX(72deg) rotateZ(28deg); }
-    .logo { position: absolute; left: 72px; top: 64px; height: 26px; }
-    .eyebrow { position: absolute; left: 72px; top: 208px; font: 500 15px/1 "Geist Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase; color: #c3c3cf; }
-    .title { position: absolute; left: 68px; top: 238px; font-size: 88px; line-height: 0.95; letter-spacing: -0.045em; font-weight: 500; }
-    .title em { display: block; font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; letter-spacing: -0.02em; color: #d2c8ff; }
-    .foot { position: absolute; left: 72px; bottom: 60px; display: flex; align-items: center; gap: 14px; font-size: 20px; color: #c3c3cf; }
-    .foot img { width: 30px; height: 30px; border-radius: 8px; }
-    .foot b { color: #fff; font-weight: 500; }
+    .line em {
+      font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; padding-right: 0.08em;
+      background: linear-gradient(92deg, #fff 0%, #d2c8ff 45%, #8feaff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .line::after {
+      content: ""; position: absolute; left: 8%; right: 8%; bottom: 0; height: 3px; border-radius: 3px;
+      background: linear-gradient(90deg, transparent, #7c5cff 20%, #45e3ff 80%, transparent); box-shadow: 0 0 18px rgba(69, 227, 255, 0.5);
+    }
+    .wordmark {
+      position: absolute; left: 50px; right: 50px; bottom: 26px; aspect-ratio: 619 / 101;
+      background: rgba(255, 255, 255, 0.2);
+      -webkit-mask-image: url("HyaicoWhite.svg"), linear-gradient(#000 30%, transparent 100%);
+      -webkit-mask-size: 100% auto, 100% 100%; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-composite: source-in;
+      mask-image: url("HyaicoWhite.svg"), linear-gradient(#000 30%, transparent 100%);
+      mask-size: 100% auto, 100% 100%; mask-repeat: no-repeat; mask-position: center; mask-composite: intersect;
+    }
   </style>
 </head>
 <body>
-  <div class="glow"></div>
-  <div class="ring"></div>
-  <div class="ring b"></div>
-  <div class="orb">
-    <svg viewBox="0 0 102 100"><path d="M0.8125 1.3125H20.625V26.8125H81.375V1.3125H101.25V99H81.375V43.75H20.625V99H0.8125V1.3125Z"/></svg>
-  </div>
   <img class="logo" src="HyaicoWhite.svg" alt="HYAICO">
-  <p class="eyebrow">HYAICO</p>
-  <h1 class="title">Built for<em>what's next.</em></h1>
-  <div class="foot"><img src="Icon.svg" alt=""><span>Makers of <b>Just Cooked</b></span></div>
+  <h1 class="line">Building <em>what's next.</em></h1>
+  <div class="wordmark"></div>
 </body>
 </html>
